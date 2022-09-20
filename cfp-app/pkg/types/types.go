@@ -27,11 +27,12 @@ type Proposal struct {
 	Abstract          string
 	Type              string
 	Speakers          []Speaker
+	Final             bool
 	ApplicationStatus ApplicationStatus
 }
 
+// ApplicationStatus represents the status of a Proposal.
 type ApplicationStatus struct {
 	Timestamp time.Time
-	Revision  int
 	Submitted bool
 }
