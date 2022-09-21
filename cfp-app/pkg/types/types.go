@@ -22,7 +22,7 @@ type Speaker struct {
 
 // Proposal represents an instance of a proposed talk that is submitted to a CFP.
 type Proposal struct {
-	ID                int64
+	ID                string
 	Title             string
 	Abstract          string
 	Type              string
