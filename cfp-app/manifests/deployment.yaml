@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cfp
+  labels:
+    app: cfp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cfp
+  template:
+    metadata:
+      labels:
+        app: cfp
+    spec:
+      containers:
+      - name: spinner
+        image: docker.io/niki2401/cfp:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: 500m
+          requests:
+            cpu: 200m
