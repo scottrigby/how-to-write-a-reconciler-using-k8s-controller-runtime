@@ -1,0 +1,6 @@
+apiVersion: talks.kubecon.na/v1
+kind: Speaker
+metadata:
+  name: speaker-sample
+spec:
+  # TODO(user): Add fields here

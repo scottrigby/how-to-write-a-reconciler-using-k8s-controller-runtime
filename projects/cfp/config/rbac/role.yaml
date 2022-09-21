@@ -1,0 +1,59 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - talks.kubecon.na
+  resources:
+  - proposals
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - talks.kubecon.na
+  resources:
+  - proposals/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - talks.kubecon.na
+  resources:
+  - proposals/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - talks.kubecon.na
+  resources:
+  - speakers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - talks.kubecon.na
+  resources:
+  - speakers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - talks.kubecon.na
+  resources:
+  - speakers/status
+  verbs:
+  - get
+  - patch
+  - update

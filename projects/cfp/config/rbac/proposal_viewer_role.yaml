@@ -1,0 +1,20 @@
+# permissions for end users to view proposals.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: proposal-viewer-role
+rules:
+- apiGroups:
+  - talks.kubecon.na
+  resources:
+  - proposals
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - talks.kubecon.na
+  resources:
+  - proposals/status
+  verbs:
+  - get

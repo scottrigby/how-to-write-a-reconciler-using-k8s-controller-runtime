@@ -1,0 +1,71 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.2
+  creationTimestamp: null
+  name: speakers.talks.kubecon.na
+spec:
+  group: talks.kubecon.na
+  names:
+    kind: Speaker
+    listKind: SpeakerList
+    plural: speakers
+    singular: speaker
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.name
+      name: Speaker
+      type: string
+    - jsonPath: .spec.email
+      name: Email
+      type: string
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: Speaker is the Schema for the speakers API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SpeakerSpec defines the desired state of Speaker
+            properties:
+              bio:
+                type: string
+              email:
+                type: string
+              name:
+                description: Name of the Speaker.
+                type: string
+            required:
+            - name
+            type: object
+          status:
+            description: SpeakerStatus defines the observed state of Speaker
+            properties:
+              id:
+                format: int64
+                type: integer
+              observedGeneration:
+                description: ObservedGeneration is the last observed generation of
+                  the Speaker object.
+                format: int64
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
