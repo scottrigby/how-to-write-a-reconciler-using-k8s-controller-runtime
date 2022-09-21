@@ -32,7 +32,7 @@ type SpeakerSpec struct {
 
 	// Email of the Speaker
 	// +kubebuilder:validation:Type=string
-	// +kubebuilder:validation:Pattern="^[\w-\.]+@([\w-]+\.)+[\w-]{2,15}$"
+	// +kubebuilder:validation:Pattern="^[a-zA-Z0-9.]+@([a-zA-Z0-9]+.)+[a-zA-Z0-9-]{2,15}$"
 	Email string `json:"email,omitempty"`
 }
 

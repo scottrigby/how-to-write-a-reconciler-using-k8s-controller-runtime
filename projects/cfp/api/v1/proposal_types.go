@@ -40,7 +40,7 @@ type ProposalSpec struct {
 	Type string `json:"type"`
 
 	// +required
-	Draft bool `json:"draft"`
+	Final bool `json:"final"`
 
 	// speaker submitting this talk
 	// +required
@@ -57,13 +57,6 @@ type SpeakerRef struct {
 	Namespace string `json:"namespace"`
 }
 
-type SubmissionStatus struct {
-	// Status represents the current status of the proposal
-	// It should move from draft to pending and then either accepted or rejected.
-	// +kubebuilder:validation:Enum=draft;pending;accepted;rejected
-	Status string `json:"status"`
-}
-
 // ProposalStatus defines the observed state of Proposal
 type ProposalStatus struct {
 	// ObservedGeneration is the last observed generation of the Speaker object.
@@ -71,15 +64,18 @@ type ProposalStatus struct {
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
 	// The time at which the proposal was submitted
-	Timestamp metav1.Timestamp `json:"timestamp:omitempty"`
+	LastUpdate metav1.Timestamp `json:"lastUpdate:omitempty"`
 
-	SubmissionStatus SubmissionStatus `json:"submissionStatus:omitempty"`
+	// Submission represents the current status of the proposal
+	// It can be draft or final
+	// +kubebuilder:validation:Enum=draft;final
+	Submission string `json:"submission:omitempty"`
 
 	Conditions []metav1.Condition `json:"conditions:omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // Proposal is the Schema for the proposals API
 type Proposal struct {
 	metav1.TypeMeta   `json:",inline"`
