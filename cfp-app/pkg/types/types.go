@@ -6,14 +6,14 @@ import (
 
 const (
 	SessionPresentationType = "SessionPresentation"
-	PanelType               = "PanelDiscussion"
-	LightiningTalkType      = "LigntningTalk"
-	KeynoteType             = "Keynote"
+	// PanelType               = "PanelDiscussion"
+	LightningTalkType = "LigntningTalk"
+	// KeynoteType             = "Keynote"
 )
 
 // Speaker represents a speaker who is submitting a proposal.
 type Speaker struct {
-	ID        int64
+	ID        string
 	Name      string
 	Bio       string
 	Email     string
@@ -22,17 +22,22 @@ type Speaker struct {
 
 // Proposal represents an instance of a proposed talk that is submitted to a CFP.
 type Proposal struct {
-	ID                string
-	Title             string
-	Abstract          string
-	Type              string
-	Speakers          []Speaker
-	Final             bool
-	ApplicationStatus ApplicationStatus
+	ID               string
+	Title            string
+	Abstract         string
+	Type             string
+	Speaker          *Speaker
+	Final            bool
+	SubmissionStatus SubmissionStatus
 }
 
-// ApplicationStatus represents the status of a Proposal.
-type ApplicationStatus struct {
-	Timestamp time.Time
-	Submitted bool
+const (
+	Draft = "draft"
+	Final = "final"
+)
+
+// Submission represents the status of a Proposal created by the user.
+type Submission struct {
+	LastUpdate time.Time
+	Status     string
 }
