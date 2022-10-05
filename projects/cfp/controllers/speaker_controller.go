@@ -51,10 +51,27 @@ type SpeakerReconciler struct {
 func (r *SpeakerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	// Get the speaker Object
 
-	// make a call to the API to create speaker (or update if exisiting)
-	//
+	// Set reconciling condition on the speaker object
+
+	// Set a finalizer on the speaker object if not set
+
+	// Check if this a deletion, if yes api call to delete the Speaker
+	// clean the finalizer
+	// Clean the condition
+
+	// Check if an ID exist in the Status
+		// Check if an update make sense
+	  	// Make an Api call and check if anything changed on the speaker spec.
+			   // If it is not found 
+				 		// Set a condition like CNCFSpeakerErrorConditon
+						// error and requeue
+				// Update and set ready condition
+		// Otherwise unset reconciling and set ready condition
+
+	// Make a call to the API to create speaker
+	//...
 
 	return ctrl.Result{}, nil
 }

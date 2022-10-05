@@ -20,6 +20,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	SpeakerNotFoundCondition = "SpeakerNotFound"
+)
+
 // SpeakerSpec defines the desired state of Speaker
 type SpeakerSpec struct {
 	// Name of the Speaker.
@@ -47,8 +51,8 @@ type SpeakerStatus struct {
 	Conditions []metav1.Condition `json:"conditions:omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Speaker",type=string,JSONPath=`.spec.name`
 // +kubebuilder:printcolumn:name="Email",type=string,JSONPath=`.spec.email`
 // Speaker is the Schema for the speakers API
