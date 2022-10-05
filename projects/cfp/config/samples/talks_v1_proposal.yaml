@@ -1,0 +1,6 @@
+apiVersion: talks.kubecon.na/v1
+kind: Proposal
+metadata:
+  name: proposal-sample
+spec:
+  # TODO(user): Add fields here

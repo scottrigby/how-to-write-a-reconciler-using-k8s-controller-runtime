@@ -1,0 +1,24 @@
+# permissions for end users to edit proposals.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: proposal-editor-role
+rules:
+- apiGroups:
+  - talks.kubecon.na
+  resources:
+  - proposals
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - talks.kubecon.na
+  resources:
+  - proposals/status
+  verbs:
+  - get
