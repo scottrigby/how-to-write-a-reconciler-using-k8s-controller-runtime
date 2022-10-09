@@ -28,7 +28,7 @@ func DeleteProposal(w http.ResponseWriter, r *http.Request) {}
 
 func validateTalkType(t string) error {
 	switch t {
-	case types.SessionPresentationType, types.PanelType, types.LightiningTalkType, types.KeynoteType:
+	case types.SessionPresentationType, types.LightningTalkType:
 		return nil
 	default:
 		return fmt.Errorf("could not validate Talk type")

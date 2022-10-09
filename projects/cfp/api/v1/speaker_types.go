@@ -20,10 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	SpeakerNotFoundCondition = "SpeakerNotFound"
-)
-
 // SpeakerSpec defines the desired state of Speaker
 type SpeakerSpec struct {
 	// Name of the Speaker.
@@ -62,6 +58,14 @@ type Speaker struct {
 
 	Spec   SpeakerSpec   `json:"spec,omitempty"`
 	Status SpeakerStatus `json:"status,omitempty"`
+}
+
+func (s *Speaker) GetConditions() []metav1.Condition {
+	return s.Status.Conditions
+}
+
+func (s *Speaker) SetConditions(conditions []metav1.Condition) {
+	s.Status.Conditions = conditions
 }
 
 //+kubebuilder:object:root=true
