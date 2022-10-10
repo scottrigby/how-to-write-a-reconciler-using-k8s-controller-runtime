@@ -49,7 +49,7 @@ type ProposalReconciler struct {
 func (r *ProposalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-		// Get the proposal Object
+	// Get the proposal Object
 
 	// Set reconciling condition on the proposal object
 
@@ -60,20 +60,19 @@ func (r *ProposalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	// Clean the condition
 
 	// Get the speaker referenced object
-	 // If does not, exist
-	   // Set a conditon: SpeakerNotFoundCondition
-		 // return and requeue
+	// If does not, exist
+	// Set a conditon: SpeakerNotFoundCondition
+	// return and requeue
 
 	// If we have a Submision on the ProposalStatus sub resource
 	// Make an api call with the submission string to get the Proposal
-		// If it is not found 
-			// Set a condition like CNCFProposalrErrorConditon
-			// error and requeue
-		// else compare the propsal with the spec
-	  // Update if needed
-		// Set the  ready condition (or any error condition)
-		// return and requeue
-
+	// If it is not found
+	// Set a condition like CNCFProposalrErrorConditon
+	// error and requeue
+	// else compare the propsal with the spec
+	// Update if needed
+	// Set the  ready condition (or any error condition)
+	// return and requeue
 
 	return ctrl.Result{}, nil
 }

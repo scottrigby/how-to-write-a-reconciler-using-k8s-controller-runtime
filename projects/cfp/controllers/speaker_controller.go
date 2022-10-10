@@ -19,7 +19,6 @@ package controllers
 import (
 	"context"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,7 +42,6 @@ var speakerOwnedConditions = []string{
 // SpeakerReconciler reconciles a Speaker object
 type SpeakerReconciler struct {
 	client.Client
-	Scheme         *runtime.Scheme
 	ControllerName string
 	cfpAPI         string
 }
@@ -65,6 +63,8 @@ func (r *SpeakerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	_ = log.FromContext(ctx)
 
 	// 1. Fetch the Speaker instance
+	// Automatically requeue if an error is returned
+	// otherwise requeue based on the result.requeue and result.requeueAfter
 	obj := &talksv1.Speaker{}
 	if err := r.Get(ctx, req.NamespacedName, obj); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -126,13 +126,13 @@ func (r *SpeakerReconciler) reconcile(ctx context.Context, obj *talksv1.Speaker)
 	// Set the initial status of the object to be reconciling
 
 	// Check if an ID exist in the Status
-		// Check if an update make sense
-	  	// Make an Api call and check if anything changed on the speaker spec.
-			   // If it is not found 
-				 		// Set a condition like CNCFSpeakerErrorConditon
-						// error and requeue
-				// Update and set ready condition
-		// Otherwise unset reconciling and set ready condition
+	// Check if an update make sense
+	// Make an Api call and check if anything changed on the speaker spec.
+	// If it is not found
+	// Set a condition like CNCFSpeakerErrorConditon
+	// error and requeue
+	// Update and set ready condition
+	// Otherwise unset reconciling and set ready condition
 
 	// Make a call to the API to create speaker
 	//...
