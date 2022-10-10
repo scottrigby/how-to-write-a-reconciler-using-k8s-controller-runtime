@@ -17,9 +17,14 @@ limitations under the License.
 package controllers
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
+	"net/http"
 
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/apimachinery/pkg/util/json"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -32,6 +37,8 @@ import (
 	talksv1 "github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/projects/cfp/api/v1"
 )
 
+const speakerPath = "/speakers"
+
 var speakerOwnedConditions = []string{
 	meta.ReadyCondition,
 	meta.ReconcilingCondition,
@@ -42,6 +49,7 @@ var speakerOwnedConditions = []string{
 // SpeakerReconciler reconciles a Speaker object
 type SpeakerReconciler struct {
 	client.Client
+	httpClient     http.Client
 	ControllerName string
 	cfpAPI         string
 }
@@ -89,6 +97,7 @@ func (r *SpeakerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		patchOpts = append(patchOpts, patch.WithFieldOwner(r.ControllerName))
 
 		// Set status observed generation field if the object is stalled, or ready.
+		// See https://alenkacz.medium.com/kubernetes-operator-best-practices-implementing-observedgeneration-250728868792
 		if conditions.IsStalled(obj) || conditions.IsReady(obj) {
 			patchOpts = append(patchOpts, patch.WithStatusObservedGeneration{})
 		}
@@ -99,7 +108,7 @@ func (r *SpeakerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		}
 	}()
 
-	// 4. Set a finalizer on the speaker object if not set
+	// 4. Set a finalizer on the obj object if not set
 	// Finalizers are keys on resources that signal pre-delete operations. They control the garbage collection on resources,
 	// and are designed to alert controllers what cleanup operations to perform prior to removing a resource.
 	// https://kubernetes.io/blog/2021/05/14/using-finalizers-to-control-deletion/
@@ -122,25 +131,105 @@ func (r *SpeakerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 // While reconciling if an error is encountered, it sets the failure details  in the appropriate
 // status condition and returns the error.
 // Step 6
-func (r *SpeakerReconciler) reconcile(ctx context.Context, obj *talksv1.Speaker) (ctrl.Result, error) {
-	// Set the initial status of the object to be reconciling
+func (r *SpeakerReconciler) reconcile(ctx context.Context, obj *talksv1.Speaker) (result ctrl.Result, err error) {
+	// Step 6.3
+	// defer func attempt to set the Ready condition and unset all needed condition sbased on the reconciliation
+	defer func() {
+		if result.Requeue == false && err == nil {
+			conditions.Delete(obj, meta.ReconcilingCondition)
+			conditions.MarkTrue(obj, meta.ReadyCondition, meta.SucceededReason, "reconciled '%s' successfully", obj.Name)
+		}
+	}()
 
+	// Set the initial status of the object to be reconciling
+	if obj.Generation != obj.Status.ObservedGeneration {
+		conditions.MarkReconciling(obj, meta.ProgressingReason, fmt.Sprintf("Reconciling a new generation of the object %d", obj.Generation))
+	}
+
+	// Step 6.1
 	// Check if an ID exist in the Status
 	// Check if an update make sense
-	// Make an Api call and check if anything changed on the speaker spec.
+	// Make an Api call and check if anything changed on the obj spec.
 	// If it is not found
 	// Set a condition like CNCFSpeakerErrorConditon
 	// error and requeue
-	// Update and set ready condition
-	// Otherwise unset reconciling and set ready condition
+	if obj.Status.ID != "" {
+		err := r.updateSpeaker(ctx, obj)
+		if err != nil {
+			// TODO: update based on err from the API
+			conditions.MarkFalse(obj, talksv1.FetchFailedCondition, talksv1.FetchFailedReason, err.Error())
+			conditions.MarkFalse(obj, meta.ReadyCondition, talksv1.FetchFailedReason, err.Error())
+			return ctrl.Result{}, err
+		}
 
-	// Make a call to the API to create speaker
-	//...
+		return ctrl.Result{}, nil
+	}
 
+	// Step 6.2
+	// Create the Speaker
+	err = r.createSpeaker(ctx, obj)
+	if err != nil {
+		conditions.MarkFalse(obj, talksv1.FetchFailedCondition, talksv1.FetchFailedReason, err.Error())
+		conditions.MarkFalse(obj, meta.ReadyCondition, talksv1.FetchFailedReason, err.Error())
+		return ctrl.Result{}, err
+	}
+
+	// Set the ID in the status
+	obj.Status.ID = fmt.Sprintf("%s/%s", obj.Namespace, obj.Name)
 	return ctrl.Result{}, nil
 }
 
-// reconcileDelete will delete the speaker from the CFP API
+func (r *SpeakerReconciler) updateSpeaker(ctx context.Context, obj *talksv1.Speaker) error {
+	// Make a call to the API to update obj
+	body, err := json.Marshal(obj.Spec)
+	if err != nil {
+		return fmt.Errorf("error marshalling obj spec: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, r.cfpAPI+speakerPath+obj.Status.ID, io.NopCloser(bytes.NewReader(body)))
+
+	if err != nil {
+		return fmt.Errorf("error creating request: %w", err)
+	}
+
+	resp, err := r.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("error making request: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("error updating obj: %s", resp.Status)
+	}
+
+	return nil
+}
+
+func (r *SpeakerReconciler) createSpeaker(ctx context.Context, obj *talksv1.Speaker) error {
+	// Make a call to the API to update obj
+	body, err := json.Marshal(obj.Spec)
+	if err != nil {
+		return fmt.Errorf("error marshalling obj spec: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, speakerPath+obj.Status.ID, io.NopCloser(bytes.NewReader(body)))
+
+	if err != nil {
+		return fmt.Errorf("error creating request: %w", err)
+	}
+
+	resp, err := r.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("error making request: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("error creating obj: %s", resp.Status)
+	}
+
+	return nil
+}
+
+// reconcileDelete will delete the obj from the CFP API
 // Step 5
 func (r *SpeakerReconciler) reconcileDelete(ctx context.Context, obj *talksv1.Speaker) (ctrl.Result, error) {
 	// api call to delete the Speaker

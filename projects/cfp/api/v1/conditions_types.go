@@ -9,3 +9,8 @@ const (
 	// present on the resource if it is True.
 	FetchFailedCondition string = "FetchFailed"
 )
+
+const (
+	// FetchFailedReason indicates that the fetch failed.
+	FetchFailedReason string = "FetchFailed"
+)

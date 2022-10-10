@@ -42,7 +42,9 @@ type SpeakerStatus struct {
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
-	ID int64 `json:"id,omitempty"`
+	// ID is the speaker ID
+	// in the form of namespace/name
+	ID string `json:"id,omitempty"`
 
 	Conditions []metav1.Condition `json:"conditions:omitempty"`
 }
