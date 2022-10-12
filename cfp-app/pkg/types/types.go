@@ -22,13 +22,13 @@ type Speaker struct {
 
 // Proposal represents an instance of a proposed talk that is submitted to a CFP.
 type Proposal struct {
-	ID               string
-	Title            string
-	Abstract         string
-	Type             string
-	Speaker          *Speaker
-	Final            bool
-	SubmissionStatus SubmissionStatus
+	ID         string
+	Title      string
+	Abstract   string
+	Type       string
+	Speaker    *Speaker
+	Final      bool
+	Submission Submission
 }
 
 const (

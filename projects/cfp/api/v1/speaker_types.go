@@ -42,13 +42,15 @@ type SpeakerStatus struct {
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
-	ID int64 `json:"id,omitempty"`
+	// ID is the speaker ID
+	// in the form of namespace/name
+	ID string `json:"id,omitempty"`
 
 	Conditions []metav1.Condition `json:"conditions:omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Speaker",type=string,JSONPath=`.spec.name`
 // +kubebuilder:printcolumn:name="Email",type=string,JSONPath=`.spec.email`
 // Speaker is the Schema for the speakers API
@@ -58,6 +60,14 @@ type Speaker struct {
 
 	Spec   SpeakerSpec   `json:"spec,omitempty"`
 	Status SpeakerStatus `json:"status,omitempty"`
+}
+
+func (s *Speaker) GetConditions() []metav1.Condition {
+	return s.Status.Conditions
+}
+
+func (s *Speaker) SetConditions(conditions []metav1.Condition) {
+	s.Status.Conditions = conditions
 }
 
 //+kubebuilder:object:root=true
