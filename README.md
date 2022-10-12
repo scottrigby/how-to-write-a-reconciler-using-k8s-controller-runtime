@@ -62,7 +62,6 @@ curl -sd '{"ID":"default/ScottRigby","name":"Scott Rigby","bio":"Scott is a rad 
   "Name": "Scott Rigby",
   "Bio": "Scott is a rad dad",
   "Email": "scott@email.com",
-  "Timestamp": "0001-01-01T00:00:00Z"
 }
 ```
 
