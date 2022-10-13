@@ -142,6 +142,7 @@ func writeSpeaker(w http.ResponseWriter, r *http.Request, speaker *types.Speaker
 	speaker.Timestamp = time.Now()
 
 	content, _ := json.MarshalIndent(speaker, "", " ")
+	_ = os.MkdirAll(speakerDataPath, 0755)
 	_ = os.WriteFile(fmt.Sprintf("%s%v.json", speakerDataPath, utils.MakeFileName(speaker.ID)), content, 0644)
 
 	w.WriteHeader(http.StatusOK)
