@@ -146,7 +146,7 @@ curl -sX GET localhost:8080/api/proposals/default-MyAwesomeTalk | jq
 
 Update a Proposal:
 ```
-curl -sd '{"ID":"default/MyAwesomeTalk","Title":"my awesome talk","Abstract":"This is a rad talk","Type":"lightning talk","SpeakerID":"default/ScottRigby","Final":false,"Submission":{"LastUpdate":"0001-01-01T00:00:00Z","Status":"draft"}}' \
+curl -sd '{"ID":"default/MyAwesomeTalk","Title":"NewTalkTitle","Abstract":"This is a rad talk","Type":"lightning talk","SpeakerID":"default/ScottRigby","Final":false,"Submission":{"Status":"draft"}}' \
 -X PUT localhost:8080/api/proposals/default-MyAwesomeTalk | jq
 
 ```
