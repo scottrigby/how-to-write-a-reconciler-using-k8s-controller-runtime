@@ -5,9 +5,9 @@ import (
 )
 
 const (
-	SessionPresentationType = "SessionPresentation"
+	SessionPresentationType = "session presentation"
 	// PanelType               = "PanelDiscussion"
-	LightningTalkType = "LigntningTalk"
+	LightningTalkType = "lightning talk"
 	// KeynoteType             = "Keynote"
 )
 
@@ -26,7 +26,7 @@ type Proposal struct {
 	Title      string
 	Abstract   string
 	Type       string
-	Speaker    *Speaker
+	SpeakerID  string
 	Final      bool
 	Submission Submission
 }

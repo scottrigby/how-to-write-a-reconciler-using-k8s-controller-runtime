@@ -54,7 +54,7 @@ go run main.go
 
 Create a Speaker:
 ```
-curl -sd '{"ID":"default/ScottRigby","name":"Scott Rigby","bio":"Scott is a rad dad","email":"scott@email.com","timestamp":"0001-01-01T00:00:00Z"}' \
+curl -sd '{"ID":"default/ScottRigby","name":"Scott Rigby","bio":"Scott is a rad dad","email":"scott@email.com"}' \
 -H "Content-Type: application/json" \
 -X POST localhost:8080/api/speakers | jq
 {
@@ -79,7 +79,7 @@ curl -sX GET localhost:8080/api/speakers | jq
 ]
 ```
 
-Get a Speakerby ID:
+Get a Speaker by ID:
 ```
 curl -sX GET localhost:8080/api/speakers/default-ScottRigby | jq
 [
@@ -95,7 +95,7 @@ curl -sX GET localhost:8080/api/speakers/default-ScottRigby | jq
 
 Update a Speaker:
 ```
-curl -sd '{"ID":"default/ScottRigby","name":"NewName","bio":"Scott is a rad dev","email":"scott@email.com","timestamp":"0001-01-01T00:00:00Z"}' \
+curl -sd '{"ID":"default/ScottRigby","name":"NewName","bio":"Scott is a rad dev","email":"scott@email.com"}' \
 -H "Content-Type: application/json" \
 -X PUT localhost:8080/api/speakers/default-ScottRigby | jq
 {
@@ -110,4 +110,48 @@ curl -sd '{"ID":"default/ScottRigby","name":"NewName","bio":"Scott is a rad dev"
 Delete a Speaker:
 ```
 curl -X DELETE localhost:8080/api/speakers/default-ScottRigby
+```
+
+
+### Proposals
+
+Create a Proposal:
+```
+curl -sd '{"ID":"default/MyAwesomeTalk","Title":"my awesome talk","Abstract":"This is a rad talk","Type":"lightning talk","SpeakerID":"default/ScottRigby","Final":false,"Submission":{"LastUpdate":"0001-01-01T00:00:00Z","Status":"draft"}}' \
+-X POST localhost:8080/api/proposals | jq
+{
+  "ID": "default/MyAwesomeTalk",
+  "Title": "my awesome talk",
+  "Abstract": "This is a rad talk",
+  "Type": "lightning talk",
+  "SpeakerID": "default/ScottRigby",
+  "Final": false,
+  "Submission": {
+    "LastUpdate": "0001-01-01T00:00:00Z",
+    "Status": "draft"
+  }
+}
+```
+
+Get all Proposals:
+```
+curl -sX GET localhost:8080/api/proposals | jq
+```
+
+Get a Proposal by ID:
+```
+curl -sX GET localhost:8080/api/proposals/default-MyAwesomeTalk | jq
+
+```
+
+Update a Proposal:
+```
+curl -sd '{"ID":"default/MyAwesomeTalk","Title":"my awesome talk","Abstract":"This is a rad talk","Type":"lightning talk","SpeakerID":"default/ScottRigby","Final":false,"Submission":{"LastUpdate":"0001-01-01T00:00:00Z","Status":"draft"}}' \
+-X PUT localhost:8080/api/proposals/default-MyAwesomeTalk | jq
+
+```
+
+Delete a Proposal:
+```
+curl -X DELETE localhost:8080/api/proposals/default-MyAwesomeTalk
 ```
