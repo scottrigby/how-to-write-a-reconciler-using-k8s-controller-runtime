@@ -49,9 +49,9 @@ var speakerOwnedConditions = []string{
 // SpeakerReconciler reconciles a Speaker object
 type SpeakerReconciler struct {
 	client.Client
-	httpClient     http.Client
+	HTTPClient     *http.Client
 	ControllerName string
-	cfpAPI         string
+	CfpAPI         string
 }
 
 //+kubebuilder:rbac:groups=talks.kubecon.na,resources=speakers,verbs=get;list;watch;create;update;patch;delete
@@ -181,18 +181,18 @@ func (r *SpeakerReconciler) reconcile(ctx context.Context, obj *talksv1.Speaker)
 
 func (r *SpeakerReconciler) updateSpeaker(ctx context.Context, obj *talksv1.Speaker) error {
 	// Make a call to the API to update obj
-	body, err := json.Marshal(obj.Spec)
+	body, err := createpayload(obj)
 	if err != nil {
-		return fmt.Errorf("error marshalling obj spec: %w", err)
+		return fmt.Errorf("error creating request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, r.cfpAPI+speakerPath+obj.Status.ID, io.NopCloser(bytes.NewReader(body)))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, r.CfpAPI+speakerPath+obj.Status.ID, io.NopCloser(bytes.NewReader(body)))
 
 	if err != nil {
 		return fmt.Errorf("error creating request: %w", err)
 	}
 
-	resp, err := r.httpClient.Do(req)
+	resp, err := r.HTTPClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("error making request: %w", err)
 	}
@@ -206,18 +206,18 @@ func (r *SpeakerReconciler) updateSpeaker(ctx context.Context, obj *talksv1.Spea
 
 func (r *SpeakerReconciler) createSpeaker(ctx context.Context, obj *talksv1.Speaker) error {
 	// Make a call to the API to update obj
-	body, err := json.Marshal(obj.Spec)
+	body, err := createpayload(obj)
 	if err != nil {
-		return fmt.Errorf("error marshalling obj spec: %w", err)
+		return fmt.Errorf("error creating request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, speakerPath+obj.Status.ID, io.NopCloser(bytes.NewReader(body)))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, speakerPath, io.NopCloser(bytes.NewReader(body)))
 
 	if err != nil {
 		return fmt.Errorf("error creating request: %w", err)
 	}
 
-	resp, err := r.httpClient.Do(req)
+	resp, err := r.HTTPClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("error making request: %w", err)
 	}
@@ -243,4 +243,25 @@ func (r *SpeakerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&talksv1.Speaker{}).
 		Complete(r)
+}
+
+func createpayload(obj *talksv1.Speaker) ([]byte, error) {
+	body := struct {
+		ID    string `json:"id"`
+		Name  string `json:"name"`
+		Bio   string `json:"bio"`
+		Email string `json:"email"`
+	}{
+		ID:    fmt.Sprintf("%s/%s", obj.Namespace, obj.Name),
+		Name:  obj.Spec.Name,
+		Bio:   obj.Spec.Bio,
+		Email: obj.Spec.Email,
+	}
+
+	payload, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling body: %w", err)
+	}
+
+	return payload, nil
 }

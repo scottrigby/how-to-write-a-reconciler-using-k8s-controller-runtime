@@ -126,8 +126,8 @@ spec:
                   type: object
                 type: array
               id:
-                format: int64
-                type: integer
+                description: ID is the speaker ID in the form of namespace/name
+                type: string
               observedGeneration:
                 description: ObservedGeneration is the last observed generation of
                   the Speaker object.
