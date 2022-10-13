@@ -187,6 +187,7 @@ func writeProposal(w http.ResponseWriter, r *http.Request, proposal *types.Propo
 	proposal.Submission.LastUpdate = time.Now()
 
 	content, _ := json.MarshalIndent(proposal, "", " ")
+	_ = os.MkdirAll(proposalsDataPath, 0755)
 	_ = os.WriteFile(fmt.Sprintf("%s%s.json", proposalsDataPath, utils.MakeFileName(proposal.ID)), content, 0644)
 
 	w.WriteHeader(http.StatusOK)
