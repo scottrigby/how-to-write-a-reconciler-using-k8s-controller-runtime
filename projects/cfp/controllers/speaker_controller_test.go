@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"context"
+	"strings"
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,25 +17,35 @@ func Test_Speaker_Reconcile(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	testCases := []struct {
-		name    string
-		Speaker string
-		Bio     string
-		Email   string
+		name             string
+		Speaker          string
+		Bio              string
+		Email            string
+		assertConditions []metav1.Condition
 	}{
 		{
-			name:    "test that is set",
-			Speaker: "Speaker one",
+			name:    "test a full create update delete cycle",
+			Speaker: "Luke Skywalker",
 			Bio:     "First speaker bio",
 			Email:   "first@protonmail.com",
+			assertConditions: []metav1.Condition{
+				*conditions.TrueCondition(meta.ReadyCondition, meta.SucceededReason, "reconciled '<name>' successfully"),
+			},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			ns, err := testEnv.CreateNamespace(ctx, "speaker-ns")
+			g.Expect(err).NotTo(HaveOccurred())
+			defer func() {
+				g.Expect(testEnv.Delete(ctx, ns)).To(Succeed())
+			}()
+
 			obj := &talksv1.Speaker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      tc.name,
-					Namespace: "default",
+					Name:      "speaker",
+					Namespace: ns.Name,
 				},
 				Spec: talksv1.SpeakerSpec{
 					Name:  tc.Speaker,
@@ -44,9 +54,7 @@ func Test_Speaker_Reconcile(t *testing.T) {
 				},
 			}
 
-			ctx := context.Background()
-
-			err := testEnv.CreateAndWait(ctx, obj)
+			err = testEnv.CreateAndWait(ctx, obj)
 			g.Expect(err).NotTo(HaveOccurred())
 
 			key := client.ObjectKey{Name: obj.Name, Namespace: obj.Namespace}
@@ -71,6 +79,12 @@ func Test_Speaker_Reconcile(t *testing.T) {
 				return obj.Generation == readyCondition.ObservedGeneration &&
 					obj.Generation == obj.Status.ObservedGeneration
 			}, timeout).Should(BeTrue())
+
+			assertConditions := tc.assertConditions
+			for k := range assertConditions {
+				assertConditions[k].Message = strings.ReplaceAll(assertConditions[k].Message, "<name>", obj.Name)
+			}
+			g.Expect(obj.Status.Conditions).To(conditions.MatchConditions(tc.assertConditions))
 		})
 	}
 }

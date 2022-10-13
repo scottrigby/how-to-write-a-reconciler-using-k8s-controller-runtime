@@ -16,6 +16,11 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
+CFP_API_PORT ?= :50001
+CFP_API_ENDPOINT ?= http://localhost$(CFP_API_PORT)/api
+
+GO_TEST_ARGS ?= -race
+
 .PHONY: all
 all: build
 
@@ -57,10 +62,12 @@ vet: ## Run go vet against code.
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
 	# start the api
-	cd ../../cfp-app && go mod tidy && go run main.go
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
-
-##@ Build
+	#CFP_API_PORT=$(CFP_API_PORT) && cd ../../cfp-app nohup go mod tidy && go run main.go &
+	# set up envtest and run the test
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" CFP_API_ENDPOINT=$(CFP_API_ENDPOINT) \
+	go test ./... $(GO_TEST_ARGS) -coverprofile cover.out
+	# clean up
+	#kill $(lsof -t -i:$(CFP_API_PORT))
 
 .PHONY: build
 build: generate fmt vet ## Build manager binary.

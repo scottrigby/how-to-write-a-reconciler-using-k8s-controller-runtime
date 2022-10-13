@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -68,8 +67,7 @@ type SpeakerReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *SpeakerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, retErr error) {
-	_ = log.FromContext(ctx)
-
+	log := log.FromContext(ctx)
 	// 1. Fetch the Speaker instance
 	// Automatically requeue if an error is returned
 	// otherwise requeue based on the result.requeue and result.requeueAfter
@@ -77,6 +75,8 @@ func (r *SpeakerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	if err := r.Get(ctx, req.NamespacedName, obj); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+
+	log.Info("reconciling speaker", "speaker", obj.Name)
 
 	// 2.Initialize the patch helper with the current version of the object.
 	// Helper is a utility for ensuring the proper patching of objects.
@@ -131,11 +131,11 @@ func (r *SpeakerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 // While reconciling if an error is encountered, it sets the failure details  in the appropriate
 // status condition and returns the error.
 // Step 6
-func (r *SpeakerReconciler) reconcile(ctx context.Context, obj *talksv1.Speaker) (result ctrl.Result, err error) {
+func (r *SpeakerReconciler) reconcile(ctx context.Context, obj *talksv1.Speaker) (result ctrl.Result, retErr error) {
 	// Step 6.3
-	// defer func attempt to set the Ready condition and unset all needed condition sbased on the reconciliation
+	// defer func attempt to set the Ready condition and unset all needed conditions based on the reconciliation
 	defer func() {
-		if result.Requeue == false && err == nil {
+		if !result.Requeue && retErr == nil {
 			conditions.Delete(obj, meta.ReconcilingCondition)
 			conditions.MarkTrue(obj, meta.ReadyCondition, meta.SucceededReason, "reconciled '%s' successfully", obj.Name)
 		}
@@ -167,7 +167,7 @@ func (r *SpeakerReconciler) reconcile(ctx context.Context, obj *talksv1.Speaker)
 
 	// Step 6.2
 	// Create the Speaker
-	err = r.createSpeaker(ctx, obj)
+	err := r.createSpeaker(ctx, obj)
 	if err != nil {
 		conditions.MarkFalse(obj, talksv1.FetchFailedCondition, talksv1.FetchFailedReason, err.Error())
 		conditions.MarkFalse(obj, meta.ReadyCondition, talksv1.FetchFailedReason, err.Error())
@@ -175,7 +175,7 @@ func (r *SpeakerReconciler) reconcile(ctx context.Context, obj *talksv1.Speaker)
 	}
 
 	// Set the ID in the status
-	obj.Status.ID = fmt.Sprintf("%s/%s", obj.Namespace, obj.Name)
+	obj.Status.ID = fmt.Sprintf("%s-%s", obj.Namespace, obj.Name)
 	return ctrl.Result{}, nil
 }
 
@@ -186,7 +186,7 @@ func (r *SpeakerReconciler) updateSpeaker(ctx context.Context, obj *talksv1.Spea
 		return fmt.Errorf("error creating request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, r.CfpAPI+speakerPath+obj.Status.ID, io.NopCloser(bytes.NewReader(body)))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, r.CfpAPI+speakerPath+obj.Status.ID, bytes.NewBuffer(body))
 
 	if err != nil {
 		return fmt.Errorf("error creating request: %w", err)
@@ -204,6 +204,7 @@ func (r *SpeakerReconciler) updateSpeaker(ctx context.Context, obj *talksv1.Spea
 	return nil
 }
 
+// createSpeaker will create a Speaker in the CFP API
 func (r *SpeakerReconciler) createSpeaker(ctx context.Context, obj *talksv1.Speaker) error {
 	// Make a call to the API to update obj
 	body, err := createpayload(obj)
@@ -211,7 +212,7 @@ func (r *SpeakerReconciler) createSpeaker(ctx context.Context, obj *talksv1.Spea
 		return fmt.Errorf("error creating request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, speakerPath, io.NopCloser(bytes.NewReader(body)))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, r.CfpAPI+speakerPath, bytes.NewBuffer(body))
 
 	if err != nil {
 		return fmt.Errorf("error creating request: %w", err)
@@ -252,7 +253,7 @@ func createpayload(obj *talksv1.Speaker) ([]byte, error) {
 		Bio   string `json:"bio"`
 		Email string `json:"email"`
 	}{
-		ID:    fmt.Sprintf("%s/%s", obj.Namespace, obj.Name),
+		ID:    fmt.Sprintf("%s-%s", obj.Namespace, obj.Name),
 		Name:  obj.Spec.Name,
 		Bio:   obj.Spec.Bio,
 		Email: obj.Spec.Email,
