@@ -60,15 +60,23 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+.PHONY: run-api
+run-api: ## Run the cfp api server
+	cd ../../cfp-app && go mod tidy \
+	&& export CFP_API_PORT=$(CFP_API_PORT) \
+	&& go run main.go &
+
+.PHONY: clean-api
+clean-api: ## clean cfp api server
+	@- kill -9 $$(lsof -t -i $(CFP_API_PORT))
+	rm -Rf ../../cfp-app/data
+
 .PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
-	# start the api
-	#CFP_API_PORT=$(CFP_API_PORT) && cd ../../cfp-app nohup go mod tidy && go run main.go &
+test: manifests generate fmt vet envtest run-api ## Run tests.
 	# set up envtest and run the test
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" CFP_API_ENDPOINT=$(CFP_API_ENDPOINT) \
 	go test ./... $(GO_TEST_ARGS) -coverprofile cover.out
-	# clean up
-	#kill $(lsof -t -i:$(CFP_API_PORT))
+	make clean-api
 
 .PHONY: build
 build: generate fmt vet ## Build manager binary.
@@ -92,9 +100,13 @@ ifndef ignore-not-found
   ignore-not-found = false
 endif
 
+.PHONY: install-dev
+install-dev: manifests kustomize ## Install CRDs into the K8s cluster specified in $(TEST_KUBECONFIG).
+	$(KUSTOMIZE) build config/crd | kubectl apply -f - --kubeconfig $(TEST_KUBECONFIG)
+
 .PHONY: install
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/crd | kubectl apply -f - --kubeconfig $(TEST_KUBECONFIG)
+	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
 .PHONY: uninstall
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
@@ -105,7 +117,7 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
-projects/cfp.PHONY: undeploy
+.PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
@@ -151,7 +163,7 @@ cleanup-kind:
 	rm $(TEST_KUBECONFIG)
 
 .PHONY: dev-deploy
-dev-deploy: docker-build # Deploy controller dev image in the configured Kubernetes cluster in ~/.kube/config
+dev-deploy: docker-build # Deploy controller dev image in the configured Kubernetes cluster in $(TEST_KUBECONFIG)
 	kind load docker-image ${IMG} --name=cp-test-cluster
 	mkdir -p config/dev && cp config/default/* config/dev
 	cd config/dev && kustomize edit set image controller=${IMG}
