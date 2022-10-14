@@ -20,6 +20,6 @@ const (
 	// CreateFailedReason indicates that the create failed.
 	CreateFailedReason string = "CreateFailed"
 
-	// CreateFailedReason indicates that the update failed.
+	// UpdateFailedReason indicates that the update failed.
 	UpdateFailedReason string = "UpdateFailed"
 )
