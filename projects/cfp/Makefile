@@ -62,14 +62,14 @@ vet: ## Run go vet against code.
 
 .PHONY: run-api
 run-api: ## Run the cfp api server
-	cd ../../cfp-app && go mod tidy \
+	cd ../../cfp-api && go mod tidy \
 	&& export CFP_API_PORT=$(CFP_API_PORT) \
 	&& go run main.go &
 
 .PHONY: clean-api
 clean-api: ## clean cfp api server
 	@- kill -9 $$(lsof -t -i $(CFP_API_PORT))
-	rm -Rf ../../cfp-app/data
+	rm -Rf ../../cfp-api/data
 
 .PHONY: test
 test: manifests generate fmt vet envtest run-api ## Run tests.
