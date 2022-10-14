@@ -32,8 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	talksv1 "github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/projects/cfp/api/v1"
-	"github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/projects/cfp/controllers"
+	talksv1 "github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/cfp/api/v1"
+	"github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/cfp/controllers"
 	//+kubebuilder:scaffold:imports
 )
 

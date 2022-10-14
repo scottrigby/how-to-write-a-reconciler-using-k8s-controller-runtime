@@ -1,4 +1,4 @@
-module github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/projects/cfp
+module github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/cfp
 
 go 1.18
 

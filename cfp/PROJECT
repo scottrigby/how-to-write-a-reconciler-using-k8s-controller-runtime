@@ -2,7 +2,7 @@ domain: kubecon.na
 layout:
 - go.kubebuilder.io/v3
 projectName: cfp
-repo: github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/projects/cfp
+repo: github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/cfp
 resources:
 - api:
     crdVersion: v1
@@ -11,7 +11,7 @@ resources:
   domain: kubecon.na
   group: talks
   kind: Speaker
-  path: github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/projects/cfp/api/v1
+  path: github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/cfp/api/v1
   version: v1
 - api:
     crdVersion: v1
@@ -20,6 +20,6 @@ resources:
   domain: kubecon.na
   group: talks
   kind: Proposal
-  path: github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/projects/cfp/api/v1
+  path: github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/cfp/api/v1
   version: v1
 version: "3"

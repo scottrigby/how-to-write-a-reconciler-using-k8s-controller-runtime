@@ -32,7 +32,7 @@ import (
 
 	//+kubebuilder:scaffold:imports
 
-	talksv1 "github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/projects/cfp/api/v1"
+	talksv1 "github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/cfp/api/v1"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
