@@ -12,6 +12,7 @@ import (
 	"github.com/fluxcd/pkg/runtime/patch"
 	. "github.com/onsi/gomega"
 	talksv1 "github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/projects/cfp/api/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 func Test_Speaker_Reconcile(t *testing.T) {
@@ -26,7 +27,7 @@ func Test_Speaker_Reconcile(t *testing.T) {
 		assertFunc       func(obj *talksv1.Speaker, assertConditions []metav1.Condition)
 	}{
 		{
-			name:    "test create speaker reconciling",
+			name:    "test create speaker reconciliation",
 			Speaker: "Luke Skywalker",
 			Bio:     "First speaker bio",
 			Email:   "first@protonmail.com",
@@ -64,7 +65,7 @@ func Test_Speaker_Reconcile(t *testing.T) {
 			},
 		},
 		{
-			name:    "test updating speaker reconciling",
+			name:    "test update speaker reconciliation",
 			Speaker: "Jesse Pinkman",
 			Bio:     "Dealer of meth",
 			Email:   "blue.meth@protonmail.com",
@@ -120,6 +121,46 @@ func Test_Speaker_Reconcile(t *testing.T) {
 				}
 				g.Expect(obj.Status.Conditions).To(conditions.MatchConditions(assertConditions))
 
+			},
+		},
+		{
+			name:    "test delete speaker reconciliation",
+			Speaker: "Jesse Pinkman",
+			Bio:     "Dealer of meth",
+			Email:   "blue.meth@protonmail.com",
+			assertFunc: func(obj *talksv1.Speaker, assertConditions []metav1.Condition) {
+				key := client.ObjectKey{Name: obj.Name, Namespace: obj.Namespace}
+				// Wait for finalizer to be set
+				g.Eventually(func() bool {
+					if err := testEnv.Get(ctx, key, obj); err != nil {
+						return false
+					}
+					return len(obj.Finalizers) > 0
+				}, timeout).Should(BeTrue())
+
+				// Wait for Speaker to be Ready
+				g.Eventually(func() bool {
+					if err := testEnv.Get(ctx, key, obj); err != nil {
+						return false
+					}
+					if !conditions.IsReady(obj) {
+						return false
+					}
+					readyCondition := conditions.Get(obj, meta.ReadyCondition)
+					return obj.Generation == readyCondition.ObservedGeneration &&
+						obj.Generation == obj.Status.ObservedGeneration
+				}, timeout).Should(BeTrue())
+
+				// Delete Speaker
+				g.Expect(testEnv.Delete(ctx, obj)).To(Succeed())
+
+				// Wait for HelmChart to be deleted
+				g.Eventually(func() bool {
+					if err := testEnv.Get(ctx, key, obj); err != nil {
+						return apierrors.IsNotFound(err)
+					}
+					return false
+				}, timeout).Should(BeTrue())
 			},
 		},
 	}
