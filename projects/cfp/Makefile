@@ -1,6 +1,12 @@
+CFP_API_PORT ?= :50001
+CFP_API_ENDPOINT ?= http://localhost$(CFP_API_PORT)/api
+
+GO_TEST_ARGS ?= -race
+
+TEST_KUBECONFIG?=/tmp/cfp-api-test-kubeconfig
 
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG ?= cfp/controller:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.2
 
@@ -15,11 +21,6 @@ endif
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
-
-CFP_API_PORT ?= :50001
-CFP_API_ENDPOINT ?= http://localhost$(CFP_API_PORT)/api
-
-GO_TEST_ARGS ?= -race
 
 .PHONY: all
 all: build
@@ -139,3 +140,19 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+.PHONY: setup-kind
+setup-kind:
+	kind create cluster --name=cp-test-cluster --kubeconfig=$(TEST_KUBECONFIG)
+
+.PHONY: cleanup-kind
+cleanup-kind:
+	kind delete cluster --name=cp-test-cluster
+	rm $(TEST_KUBECONFIG)
+
+.PHONY: dev-deploy
+dev-deploy:  setup-kind ## Deploy controller dev image in the configured Kubernetes cluster in ~/.kube/config
+	mkdir -p config/dev && cp config/default/* config/dev
+	cd config/dev && kustomize edit set image $(IMG):$(TAG)
+	kustomize build config/dev | kubectl apply -f -
+	rm -rf config/dev
