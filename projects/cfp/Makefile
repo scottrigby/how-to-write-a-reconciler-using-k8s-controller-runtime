@@ -94,7 +94,7 @@ endif
 
 .PHONY: install
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/crd | kubectl apply -f -
+	$(KUSTOMIZE) build config/crd | kubectl apply -f - --kubeconfig $(TEST_KUBECONFIG)
 
 .PHONY: uninstall
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
@@ -105,7 +105,7 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
-.PHONY: undeploy
+projects/cfp.PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
@@ -151,8 +151,9 @@ cleanup-kind:
 	rm $(TEST_KUBECONFIG)
 
 .PHONY: dev-deploy
-dev-deploy:  setup-kind ## Deploy controller dev image in the configured Kubernetes cluster in ~/.kube/config
+dev-deploy: docker-build # Deploy controller dev image in the configured Kubernetes cluster in ~/.kube/config
+	kind load docker-image ${IMG} --name=cp-test-cluster
 	mkdir -p config/dev && cp config/default/* config/dev
-	cd config/dev && kustomize edit set image $(IMG):$(TAG)
-	kustomize build config/dev | kubectl apply -f -
+	cd config/dev && kustomize edit set image controller=${IMG}
+	kustomize build config/dev | kubectl apply -f - --kubeconfig $(TEST_KUBECONFIG)
 	rm -rf config/dev

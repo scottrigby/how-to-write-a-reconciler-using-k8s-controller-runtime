@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"net/http"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/json"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -107,6 +108,10 @@ func (r *SpeakerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 
 		// Finally, patch the resource
 		if err := patchHelper.Patch(ctx, obj, patchOpts...); err != nil {
+			if !obj.GetDeletionTimestamp().IsZero() {
+				err = kerrors.FilterOut(err, func(e error) bool { return apierrors.IsNotFound(e) })
+			}
+
 			retErr = kerrors.NewAggregate([]error{retErr, err})
 		}
 	}()
@@ -258,6 +263,7 @@ func (r *SpeakerReconciler) reconcileDelete(ctx context.Context, obj *talksv1.Sp
 	}
 	// clean the finalizer
 	controllerutil.RemoveFinalizer(obj, talksv1.Finalizer)
+	fmt.Println("FINALIZER REMOVED", obj.Generation)
 
 	// Stop the reconciliation
 	return ctrl.Result{}, nil

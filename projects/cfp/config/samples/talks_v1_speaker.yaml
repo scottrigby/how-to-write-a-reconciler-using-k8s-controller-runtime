@@ -3,4 +3,7 @@ kind: Speaker
 metadata:
   name: speaker-sample
 spec:
+  name: test-speaker
+  bio: "I am a test speaker"
+  email: speaker@gmail.com
   # TODO(user): Add fields here

@@ -58,7 +58,7 @@ func main() {
 	)
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.StringVar(&cfpAPI, "cfp-api-endpoint-address", "localhost:50001/api", "The address of the cfp API.")
+	flag.StringVar(&cfpAPI, "cfp-api-endpoint-address", "http://localhost:50001/api", "The address of the cfp API.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
