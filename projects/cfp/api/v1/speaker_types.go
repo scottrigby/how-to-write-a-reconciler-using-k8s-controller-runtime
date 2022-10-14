@@ -46,7 +46,7 @@ type SpeakerStatus struct {
 	// in the form of namespace/name
 	ID string `json:"id,omitempty"`
 
-	Conditions []metav1.Condition `json:"conditions:omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true

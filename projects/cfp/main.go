@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"net/http"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -49,11 +50,15 @@ func init() {
 }
 
 func main() {
-	var metricsAddr string
-	var enableLeaderElection bool
-	var probeAddr string
+	var (
+		metricsAddr          string
+		enableLeaderElection bool
+		probeAddr            string
+		cfpAPI               string
+	)
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(&cfpAPI, "cfp-api-endpoint-address", "http://localhost:50001/api", "The address of the cfp API.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -89,8 +94,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	httpClient := http.DefaultClient
+
 	if err = (&controllers.SpeakerReconciler{
-		Client: mgr.GetClient(),
+		Client:         mgr.GetClient(),
+		HTTPClient:     httpClient,
+		ControllerName: "speaker-controller",
+		CfpAPI:         cfpAPI,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Speaker")
 		os.Exit(1)

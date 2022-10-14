@@ -1,16 +1,23 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/scottrigby/cfp/pkg/handlers"
 )
 
-const port = ":8080"
+const defaultPort = 8080
 
 func main() {
+	port := os.Getenv("CFP_API_PORT")
+	if port == "" {
+		port = fmt.Sprintf(":%d", defaultPort)
+	}
+
 	r := mux.NewRouter()
 
 	RegisterSpeakerRoutes(r)
