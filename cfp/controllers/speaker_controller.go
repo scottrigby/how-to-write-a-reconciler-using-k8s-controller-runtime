@@ -35,8 +35,8 @@ import (
 	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/fluxcd/pkg/runtime/patch"
 
-	talksv1 "github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/projects/cfp/api/v1"
-	"github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/projects/cfp/internal/cfp"
+	talksv1 "github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/cfp/api/v1"
+	"github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/cfp/internal/cfp"
 )
 
 const speakerPath = "/speakers"
