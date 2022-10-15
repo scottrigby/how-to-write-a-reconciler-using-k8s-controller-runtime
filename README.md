@@ -11,7 +11,7 @@ Since we'll be building a controller with reconcilers, we'll need something to r
 For this, we've built a simple API for submitting KubeCon CFP proposals, using CRDs.
 
 - CFP API code is in [`/cfp-api`](cfp-api/README.md)
-- controller code is in [`/cfp`](projects/README.md)
+- controller code is in [`/cfp`](cfp/README.md)
 
 ## Local dev
 
