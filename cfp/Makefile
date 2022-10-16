@@ -63,7 +63,6 @@ vet: ## Run go vet against code.
 .PHONY: run-api
 run-api: ## Run the cfp api server
 	cd ../cfp-api && go mod tidy \
-	&& export CFP_API_PORT=$(CFP_API_PORT) \
 	&& go run main.go &
 
 .PHONY: clean-api
@@ -87,7 +86,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
 .PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
+docker-build: ## Build docker image with the manager.
 	docker build -t ${IMG} .
 
 .PHONY: docker-push
@@ -167,5 +166,6 @@ dev-deploy: docker-build # Deploy controller dev image in the configured Kuberne
 	kind load docker-image ${IMG} --name=cp-test-cluster
 	mkdir -p config/dev && cp config/default/* config/dev
 	cd config/dev && kustomize edit set image controller=${IMG}
+	kubectl apply -f ../cfp-api/manifests/cfp-api.yaml --kubeconfig $(TEST_KUBECONFIG)
 	kustomize build config/dev | kubectl apply -f - --kubeconfig $(TEST_KUBECONFIG)
 	rm -rf config/dev

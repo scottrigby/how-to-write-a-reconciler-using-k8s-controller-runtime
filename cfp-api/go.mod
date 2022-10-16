@@ -1,4 +1,4 @@
-module github.com/scottrigby/cfp
+module github.com/scottrigby/cfp-api
 
 go 1.18
 

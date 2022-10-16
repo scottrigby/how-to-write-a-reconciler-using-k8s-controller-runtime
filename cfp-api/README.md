@@ -5,7 +5,7 @@
 Get the API running:
 
 ```sh
-go run main.go
+make run
 ```
 
 ### Speakers
@@ -15,7 +15,7 @@ Create a Speaker:
 ```bash
 curl -sd '{"ID":"default/ScottRigby","name":"Scott Rigby","bio":"Scott is a rad dad","email":"scott@email.com"}' \
 -H "Content-Type: application/json" \
--X POST localhost:8080/api/speakers | jq
+-X POST localhost:50001/api/speakers | jq
 {
   "ID": "default/ScottRigby",
   "Name": "Scott Rigby",
@@ -28,7 +28,7 @@ curl -sd '{"ID":"default/ScottRigby","name":"Scott Rigby","bio":"Scott is a rad 
 Get all Speakers:
 
 ```bash
-curl -sX GET localhost:8080/api/speakers | jq
+curl -sX GET localhost:50001/api/speakers | jq
 [
   {
     "ID": "default/ScottRigby",
@@ -42,7 +42,7 @@ curl -sX GET localhost:8080/api/speakers | jq
 
 Get a Speaker by ID:
 ```bash
-curl -sX GET localhost:8080/api/speakers/default-ScottRigby | jq
+curl -sX GET localhost:50001/api/speakers/default-ScottRigby | jq
 [
   {
     "ID": "default/ScottRigby",
@@ -59,7 +59,7 @@ Update a Speaker:
 ```bash
 curl -sd '{"ID":"default/ScottRigby","name":"NewName","bio":"Scott is a rad dev","email":"scott@email.com"}' \
 -H "Content-Type: application/json" \
--X PUT localhost:8080/api/speakers/default-ScottRigby | jq
+-X PUT localhost:50001/api/speakers/default-ScottRigby | jq
 {
   "ID": "default/ScottRigby",
   "Name": "NewName",
@@ -72,7 +72,7 @@ curl -sd '{"ID":"default/ScottRigby","name":"NewName","bio":"Scott is a rad dev"
 Delete a Speaker:
 
 ```bash
-curl -X DELETE localhost:8080/api/speakers/default-ScottRigby
+curl -X DELETE localhost:50001/api/speakers/default-ScottRigby
 ```
 
 
@@ -81,7 +81,7 @@ curl -X DELETE localhost:8080/api/speakers/default-ScottRigby
 Create a Proposal:
 ```bash
 curl -sd '{"ID":"default/MyAwesomeTalk","Title":"my awesome talk","Abstract":"This is a rad talk","Type":"lightning talk","SpeakerID":"default/ScottRigby","Final":false,"Submission":{"Status":"draft"}}' \
--X POST localhost:8080/api/proposals | jq
+-X POST localhost:50001/api/proposals | jq
 {
   "ID": "default/MyAwesomeTalk",
   "Title": "my awesome talk",
@@ -99,7 +99,7 @@ curl -sd '{"ID":"default/MyAwesomeTalk","Title":"my awesome talk","Abstract":"Th
 Get all Proposals:
 
 ```bash
-curl -sX GET localhost:8080/api/proposals | jq
+curl -sX GET localhost:50001/api/proposals | jq
 [
   {
     "ID": "default/MyAwesomeTalk",
@@ -131,7 +131,7 @@ curl -sX GET localhost:8080/api/proposals | jq
 Get a Proposal by ID:
 
 ```bash
-curl -sX GET localhost:8080/api/proposals/default-MyAwesomeTalk | jq
+curl -sX GET localhost:50001/api/proposals/default-MyAwesomeTalk | jq
 {
   "ID": "default/MyAwesomeTalk",
   "Title": "my awesome talk",
@@ -150,7 +150,7 @@ Update a Proposal:
 
 ```bash
 curl -sd '{"ID":"default/MyAwesomeTalk","Title":"NewTalkTitle","Abstract":"This is a rad talk","Type":"lightning talk","SpeakerID":"default/ScottRigby","Final":false,"Submission":{"Status":"draft"}}' \
--X PUT localhost:8080/api/proposals/default-MyAwesomeTalk | jq
+-X PUT localhost:50001/api/proposals/default-MyAwesomeTalk | jq
 {
   "ID": "default/MyAwesomeTalk",
   "Title": "my very awesome talk",
@@ -168,5 +168,5 @@ curl -sd '{"ID":"default/MyAwesomeTalk","Title":"NewTalkTitle","Abstract":"This 
 Delete a Proposal:
 
 ```bash
-curl -X DELETE localhost:8080/api/proposals/default-MyAwesomeTalk
+curl -X DELETE localhost:50001/api/proposals/default-MyAwesomeTalk
 ```

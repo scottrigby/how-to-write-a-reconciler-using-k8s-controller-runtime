@@ -1,5 +1,16 @@
-from busybox
+FROM golang:1.18-alpine
 
-COPY cfp /root/cfp
+RUN apk add --no-cache git
 
-ENTRYPOINT /root/cfp
+WORKDIR /app/cfp-api
+
+COPY go.mod .
+COPY go.sum .
+
+RUN go mod download
+
+COPY . .
+
+RUN go build -o ./build/cfp-api .
+
+CMD [ "./build/cfp-api" ]
