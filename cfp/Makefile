@@ -1,5 +1,4 @@
-CFP_API_PORT ?= :50001
-CFP_API_ENDPOINT ?= http://localhost$(CFP_API_PORT)/api
+CFP_API_ENDPOINT ?= http://localhost:50001/api
 
 GO_TEST_ARGS ?= -race
 
@@ -62,9 +61,8 @@ vet: ## Run go vet against code.
 
 .PHONY: run-api
 run-api: ## Run the cfp api server
-	cd ../cfp-api && go mod tidy \
-	&& export CFP_API_PORT=$(CFP_API_PORT) \
-	&& go run main.go &
+	docker pull niki2401/cfp-api:latest
+	docker run -p 50001:50001 -it niki2401/cfp-api:latest
 
 .PHONY: clean-api
 clean-api: ## clean cfp api server
@@ -102,6 +100,7 @@ endif
 
 .PHONY: install-dev
 install-dev: manifests kustomize ## Install CRDs into the K8s cluster specified in $(TEST_KUBECONFIG).
+	kubectl apply -f ../cfp-api/manifests/cfp-api.yaml --kubeconfig $(TEST_KUBECONFIG)
 	$(KUSTOMIZE) build config/crd | kubectl apply -f - --kubeconfig $(TEST_KUBECONFIG)
 
 .PHONY: install
@@ -167,5 +166,6 @@ dev-deploy: docker-build # Deploy controller dev image in the configured Kuberne
 	kind load docker-image ${IMG} --name=cp-test-cluster
 	mkdir -p config/dev && cp config/default/* config/dev
 	cd config/dev && kustomize edit set image controller=${IMG}
+	kubectl apply -f ../cfp-api/manifests/cfp-api.yaml --kubeconfig $(TEST_KUBECONFIG)
 	kustomize build config/dev | kubectl apply -f - --kubeconfig $(TEST_KUBECONFIG)
 	rm -rf config/dev

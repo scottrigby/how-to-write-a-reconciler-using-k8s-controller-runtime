@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/scottrigby/cfp/pkg/types"
-	"github.com/scottrigby/cfp/pkg/utils"
+	"github.com/scottrigby/cfp-api/pkg/types"
+	"github.com/scottrigby/cfp-api/pkg/utils"
 )
 
 const proposalsDataPath = "data/proposals/"
