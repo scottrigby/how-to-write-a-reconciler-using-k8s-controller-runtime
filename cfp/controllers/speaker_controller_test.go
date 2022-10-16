@@ -1,18 +1,18 @@
 package controllers
 
 import (
-	"strings"
+	// "strings"
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	// "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/fluxcd/pkg/apis/meta"
-	"github.com/fluxcd/pkg/runtime/conditions"
-	"github.com/fluxcd/pkg/runtime/patch"
+	// "github.com/fluxcd/pkg/apis/meta"
+	// "github.com/fluxcd/pkg/runtime/conditions"
+	// "github.com/fluxcd/pkg/runtime/patch"
 	. "github.com/onsi/gomega"
 	talksv1 "github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/cfp/api/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	// apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 func Test_Speaker_Reconcile(t *testing.T) {
@@ -26,6 +26,7 @@ func Test_Speaker_Reconcile(t *testing.T) {
 		assertConditions []metav1.Condition
 		assertFunc       func(obj *talksv1.Speaker, assertConditions []metav1.Condition)
 	}{
+		/* 1. create speaker reconciliation
 		{
 			name:    "test create speaker reconciliation",
 			Speaker: "Luke Skywalker",
@@ -64,6 +65,8 @@ func Test_Speaker_Reconcile(t *testing.T) {
 
 			},
 		},
+		*/
+		/* 2. update speaker reconciliation
 		{
 			name:    "test update speaker reconciliation",
 			Speaker: "Jesse Pinkman",
@@ -123,6 +126,8 @@ func Test_Speaker_Reconcile(t *testing.T) {
 
 			},
 		},
+		*/
+		/* 3. delete speaker reconciliation
 		{
 			name:    "test delete speaker reconciliation",
 			Speaker: "Jesse Pinkman",
@@ -163,6 +168,7 @@ func Test_Speaker_Reconcile(t *testing.T) {
 				}, timeout).Should(BeTrue())
 			},
 		},
+		*/
 	}
 
 	for _, tc := range testCases {
