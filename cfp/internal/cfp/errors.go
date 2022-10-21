@@ -35,10 +35,15 @@ func (e *Error) Is(target error) bool {
 }
 
 var (
-	ErrCreateRequest = ErrorReason{Reason: "InvalidRequest", Summary: "invalid request"}
-	ErrMakeRequest   = ErrorReason{Reason: "RequestFailed", Summary: "request failed"}
-	ErrCreateSpeaker = ErrorReason{Reason: "CreateSpeakerFailed", Summary: "error creating speaker"}
-	ErrUpdateSpeaker = ErrorReason{Reason: "UpdateSpeakerFailed", Summary: "error updating speaker"}
-	ErrFetchSpeaker  = ErrorReason{Reason: "FetchSpeakerFailed", Summary: "error fetching speaker"}
-	ErrDeleteSpeaker = ErrorReason{Reason: "DeleteSpeakerFailed", Summary: "error deleting speaker"}
+	ErrCreateRequest  = ErrorReason{Reason: "InvalidRequest", Summary: "invalid request"}
+	ErrMakeRequest    = ErrorReason{Reason: "RequestFailed", Summary: "request failed"}
+	ErrCreateSpeaker  = ErrorReason{Reason: "CreateSpeakerFailed", Summary: "error creating speaker"}
+	ErrUpdateSpeaker  = ErrorReason{Reason: "UpdateSpeakerFailed", Summary: "error updating speaker"}
+	ErrFetchSpeaker   = ErrorReason{Reason: "FetchSpeakerFailed", Summary: "error fetching speaker"}
+	ErrDeleteSpeaker  = ErrorReason{Reason: "DeleteSpeakerFailed", Summary: "error deleting speaker"}
+	ErrCreateProposal = ErrorReason{Reason: "CreateProposalFailed", Summary: "error creating proposal"}
+	ErrUpdateProposal = ErrorReason{Reason: "UpdateProposalFailed", Summary: "error updating proposal"}
+	ErrFetchProposal  = ErrorReason{Reason: "FetchProposalFailed", Summary: "error fetching proposal"}
+	ErrDeleteProposal = ErrorReason{Reason: "DeleteProposalFailed", Summary: "error deleting proposal"}
+	ErrUnknown        = ErrorReason{Reason: "Unknown", Summary: "unknown error"}
 )

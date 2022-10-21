@@ -1,5 +1,5 @@
 CFP_API_PORT ?= :50001
-CFP_API_ENDPOINT ?= http://localhost$(CFP_API_PORT)/api
+CFP_API_ENDPOINT ?= http://localhost$(CFP_API_PORT)
 
 GO_TEST_ARGS ?= -race
 

@@ -62,6 +62,14 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
+	if err := (&ProposalReconciler{
+		Client:     testEnv.Client,
+		HTTPClient: client,
+		CfpAPI:     cfpAPI,
+	}).SetupWithManager(testEnv.Manager); err != nil {
+		panic(err)
+	}
+
 	go func() {
 		fmt.Println("Starting the test environment")
 		if err := testEnv.Start(ctx); err != nil {

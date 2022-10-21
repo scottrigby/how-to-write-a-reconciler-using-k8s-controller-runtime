@@ -46,7 +46,7 @@ spec:
                 type: string
               email:
                 description: Email of the Speaker
-                pattern: ^[a-zA-Z0-9.]+@([a-zA-Z0-9]+.)+[a-zA-Z0-9-]{2,15}$
+                pattern: ^[a-zA-Z0-9.-]+@([a-zA-Z0-9]+.)+[a-zA-Z0-9-]{2,15}$
                 type: string
               name:
                 description: Name of the Speaker.
@@ -58,6 +58,7 @@ spec:
             description: SpeakerStatus defines the observed state of Speaker
             properties:
               conditions:
+                description: Conditions is a list of conditions and their status.
                 items:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource. --- This struct is intended for direct
@@ -126,7 +127,7 @@ spec:
                   type: object
                 type: array
               id:
-                description: ID is the speaker ID in the form of namespace/name
+                description: ID is the speaker ID in the form of namespace-name
                 type: string
               observedGeneration:
                 description: ObservedGeneration is the last observed generation of

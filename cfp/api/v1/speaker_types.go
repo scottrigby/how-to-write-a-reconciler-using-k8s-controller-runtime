@@ -20,6 +20,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// SpeakerIndexKey is the key used for indexing objects based on their
+	// referenced Speaker.
+	SpeakerIndexKey = ".metadata.SpeakerName"
+)
+
 // SpeakerSpec defines the desired state of Speaker
 type SpeakerSpec struct {
 	// Name of the Speaker.
@@ -32,7 +38,7 @@ type SpeakerSpec struct {
 
 	// Email of the Speaker
 	// +kubebuilder:validation:Type=string
-	// +kubebuilder:validation:Pattern="^[a-zA-Z0-9.]+@([a-zA-Z0-9]+.)+[a-zA-Z0-9-]{2,15}$"
+	// +kubebuilder:validation:Pattern="^[a-zA-Z0-9.-]+@([a-zA-Z0-9]+.)+[a-zA-Z0-9-]{2,15}$"
 	Email string `json:"email,omitempty"`
 }
 
@@ -43,9 +49,12 @@ type SpeakerStatus struct {
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
 	// ID is the speaker ID
-	// in the form of namespace/name
+	// in the form of namespace-name
+	// +optional
 	ID string `json:"id,omitempty"`
 
+	// Conditions is a list of conditions and their status.
+	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 

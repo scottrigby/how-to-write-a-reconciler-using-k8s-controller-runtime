@@ -154,7 +154,7 @@ func Test_Speaker_Reconcile(t *testing.T) {
 				// Delete Speaker
 				g.Expect(testEnv.Delete(ctx, obj)).To(Succeed())
 
-				// Wait for HelmChart to be deleted
+				// Wait for Speaker to be deleted
 				g.Eventually(func() bool {
 					if err := testEnv.Get(ctx, key, obj); err != nil {
 						return apierrors.IsNotFound(err)
