@@ -3,4 +3,11 @@ kind: Proposal
 metadata:
   name: proposal-sample
 spec:
+  title: "Kubernetes: The Good Parts"
+  abstract: "A talk about the good parts of Kubernetes"
+  type: "talk"
+  final: false
+  speakerRef:
+    name: speaker-sample
+    namespace: default
   # TODO(user): Add fields here
