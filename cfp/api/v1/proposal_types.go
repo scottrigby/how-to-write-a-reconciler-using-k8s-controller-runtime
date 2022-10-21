@@ -72,17 +72,17 @@ type ProposalStatus struct {
 
 	// The time at which the proposal was submitted
 	// +optional
-	LastUpdate metav1.Time `json:"lastUpdate:omitempty"`
+	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
 
 	// Submission represents the current status of the proposal
 	// It can be draft or final
 	// +kubebuilder:validation:Enum=draft;final
 	// +optional
-	Submission string `json:"submission:omitempty"`
+	Submission string `json:"submission,omitempty"`
 
 	// Conditions is a list of conditions and their status.
 	// +optional
-	Conditions []metav1.Condition `json:"conditions:omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
