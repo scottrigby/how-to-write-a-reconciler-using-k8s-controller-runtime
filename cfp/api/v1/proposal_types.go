@@ -20,6 +20,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// ProposalStateFinale is the state of a proposal that cannot be changed anymore.
+	ProposalStateFinal = "final"
+	// ProposalStateDraft is the state of a proposal that is still being drafted
+	ProposalStateDraft = "draft"
+)
+
 // ProposalSpec defines the desired state of Proposal
 type ProposalSpec struct {
 	// Title of the proposal
@@ -64,13 +71,17 @@ type ProposalStatus struct {
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
 	// The time at which the proposal was submitted
-	LastUpdate metav1.Timestamp `json:"lastUpdate:omitempty"`
+	// +optional
+	LastUpdate metav1.Time `json:"lastUpdate:omitempty"`
 
 	// Submission represents the current status of the proposal
 	// It can be draft or final
 	// +kubebuilder:validation:Enum=draft;final
+	// +optional
 	Submission string `json:"submission:omitempty"`
 
+	// Conditions is a list of conditions and their status.
+	// +optional
 	Conditions []metav1.Condition `json:"conditions:omitempty"`
 }
 
@@ -83,6 +94,14 @@ type Proposal struct {
 
 	Spec   ProposalSpec   `json:"spec,omitempty"`
 	Status ProposalStatus `json:"status,omitempty"`
+}
+
+func (p *Proposal) GetConditions() []metav1.Condition {
+	return p.Status.Conditions
+}
+
+func (p *Proposal) SetConditions(conditions []metav1.Condition) {
+	p.Status.Conditions = conditions
 }
 
 //+kubebuilder:object:root=true

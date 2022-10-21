@@ -38,7 +38,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        - --cfp-api-endpoint-address=cfp-api.cfp.svc.cluster.local.:50001/api
+        - --cfp-api-endpoint-address=cfp-api.cfp.svc.cluster.local.:50001
         image: controller:latest
         name: manager
         imagePullPolicy: IfNotPresent

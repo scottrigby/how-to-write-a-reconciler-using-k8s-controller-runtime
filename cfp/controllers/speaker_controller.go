@@ -23,9 +23,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"encoding/json"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/apimachinery/pkg/util/json"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -38,8 +39,6 @@ import (
 	talksv1 "github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/cfp/api/v1"
 	"github.com/scottrigby/how-to-write-a-reconciler-using-k8s-controller-runtime/cfp/internal/cfp"
 )
-
-const speakerPath = "/speakers"
 
 var speakerOwnedConditions = []string{
 	meta.ReadyCondition,
@@ -72,7 +71,7 @@ type SpeakerReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *SpeakerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, retErr error) {
 	log := log.FromContext(ctx)
-	// 1. Fetch the Speaker instance
+	// Fetch the Speaker instance
 	// Automatically requeue if an error is returned
 	// otherwise requeue based on the result.requeue and result.requeueAfter
 	obj := &talksv1.Speaker{}
@@ -82,14 +81,14 @@ func (r *SpeakerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 
 	log.Info("reconciling speaker", "speaker", obj.Name)
 
-	// 2.Initialize the patch helper with the current version of the object.
+	// Initialize the patch helper with the current version of the object.
 	// Helper is a utility for ensuring the proper patching of objects.
 	patchHelper, err := patch.NewHelper(obj, r.Client)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	// 3. Always attempt to Patch the Speaker object and status after each reconciliation.
+	// Always attempt to Patch the Speaker object and status after each reconciliation.
 	defer func() {
 		// Patch the object, ignoring conflicts on the conditions owned by this controller
 		patchOpts := []patch.Option{
@@ -116,7 +115,7 @@ func (r *SpeakerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		}
 	}()
 
-	// 4. Set a finalizer on the obj object if not set
+	// Set a finalizer on the obj object if not set
 	// Finalizers are keys on resources that signal pre-delete operations. They control the garbage collection on resources,
 	// and are designed to alert controllers what cleanup operations to perform prior to removing a resource.
 	// https://kubernetes.io/blog/2021/05/14/using-finalizers-to-control-deletion/
@@ -125,25 +124,27 @@ func (r *SpeakerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	//create a new speaker client
-	speakerClient := cfp.NewSpeakerClient(r.CfpAPI, r.HTTPClient)
-
-	// 5. Check if this a deletion, if yes api call to delete the Speaker
-	if !obj.ObjectMeta.DeletionTimestamp.IsZero() {
-		return r.reconcileDelete(ctx, obj, speakerClient)
+	//create a new cfp client
+	cfpClient, err := cfp.NewClient(r.CfpAPI, r.HTTPClient)
+	if err != nil {
+		conditions.MarkStalled(obj, talksv1.CreateFailedCondition, "Failed to create cfp client")
+		return ctrl.Result{}, err
 	}
 
-	// 6. Perform reconciliation logic
-	result, retErr = r.reconcile(ctx, obj, speakerClient)
+	// Check if this a deletion, if yes api call to delete the Speaker
+	if !obj.ObjectMeta.DeletionTimestamp.IsZero() {
+		return r.reconcileDelete(ctx, obj, cfpClient)
+	}
+
+	// Perform reconciliation logic
+	result, retErr = r.reconcile(ctx, obj, cfpClient)
 	return
 }
 
 // reconcile will perform the reconciliation logic for the Speaker object
 // While reconciling if an error is encountered, it sets the failure details  in the appropriate
 // status condition and returns the error.
-// Step 6
-func (r *SpeakerReconciler) reconcile(ctx context.Context, obj *talksv1.Speaker, client *cfp.SpeakerClient) (result ctrl.Result, retErr error) {
-	// Step 6.3
+func (r *SpeakerReconciler) reconcile(ctx context.Context, obj *talksv1.Speaker, client *cfp.Client) (result ctrl.Result, retErr error) {
 	// defer func attempt to set the Ready condition and unset all needed conditions based on the reconciliation
 	defer func() {
 		if !result.Requeue && retErr == nil {
@@ -157,11 +158,8 @@ func (r *SpeakerReconciler) reconcile(ctx context.Context, obj *talksv1.Speaker,
 			var apiErr *cfp.Error
 			if ok := errors.As(retErr, &apiErr); !ok {
 				apiErr = &cfp.Error{
-					Reason: cfp.ErrorReason{
-						Reason:  "unknown",
-						Summary: "unkonwn error",
-					},
-					Err: retErr,
+					Reason: cfp.ErrUnknown,
+					Err:    retErr,
 				}
 			}
 			switch apiErr.Reason {
@@ -184,7 +182,6 @@ func (r *SpeakerReconciler) reconcile(ctx context.Context, obj *talksv1.Speaker,
 		conditions.MarkReconciling(obj, meta.ProgressingReason, fmt.Sprintf("Reconciling a new generation of the object %d", obj.Generation))
 	}
 
-	// Step 6.1
 	// Check if an ID exist in the Status
 	// Check if an update make sense
 	// Make an Api call and check if anything changed on the obj spec.
@@ -199,7 +196,6 @@ func (r *SpeakerReconciler) reconcile(ctx context.Context, obj *talksv1.Speaker,
 		return ctrl.Result{}, nil
 	}
 
-	// Step 6.2
 	// Create the Speaker
 	err := r.createSpeaker(ctx, obj, client)
 	if err != nil {
@@ -211,15 +207,15 @@ func (r *SpeakerReconciler) reconcile(ctx context.Context, obj *talksv1.Speaker,
 	return ctrl.Result{}, nil
 }
 
-func (r *SpeakerReconciler) handleSpeakerUpdate(ctx context.Context, obj *talksv1.Speaker, client *cfp.SpeakerClient) error {
+func (r *SpeakerReconciler) handleSpeakerUpdate(ctx context.Context, obj *talksv1.Speaker, client *cfp.Client) error {
 	// Make a call to the API to update obj
-	body, err := createpayload(obj)
+	body, err := createSpeakerPayload(obj)
 	if err != nil {
 		return fmt.Errorf("error creating request: %w", err)
 	}
 
 	// Get the Speaker
-	payload, err := client.Get(ctx, speakerPath, obj.Status.ID)
+	payload, err := client.Get(ctx, cfp.SpeakerPath, obj.Status.ID)
 	if err != nil {
 		return err
 	}
@@ -227,7 +223,7 @@ func (r *SpeakerReconciler) handleSpeakerUpdate(ctx context.Context, obj *talksv
 	// Check if the payload is the same
 	// if not, it means we have changed the spec, so we need to update the speaker
 	if !bytes.Equal(payload, body) {
-		err = client.Update(ctx, speakerPath, obj.Status.ID, body)
+		_, err = client.Update(ctx, cfp.SpeakerPath, obj.Status.ID, body)
 		if err != nil {
 			return err
 		}
@@ -237,14 +233,14 @@ func (r *SpeakerReconciler) handleSpeakerUpdate(ctx context.Context, obj *talksv
 }
 
 // createSpeaker will create a Speaker in the CFP API
-func (r *SpeakerReconciler) createSpeaker(ctx context.Context, obj *talksv1.Speaker, client *cfp.SpeakerClient) error {
+func (r *SpeakerReconciler) createSpeaker(ctx context.Context, obj *talksv1.Speaker, client *cfp.Client) error {
 	// Make a call to the API to update obj
-	body, err := createpayload(obj)
+	body, err := createSpeakerPayload(obj)
 	if err != nil {
 		return fmt.Errorf("error creating request: %w", err)
 	}
 
-	err = client.Create(ctx, speakerPath, body)
+	_, err = client.Create(ctx, cfp.SpeakerPath, body)
 	if err != nil {
 		return err
 	}
@@ -253,17 +249,17 @@ func (r *SpeakerReconciler) createSpeaker(ctx context.Context, obj *talksv1.Spea
 }
 
 // reconcileDelete will delete the obj from the CFP API
-// Step 5
-func (r *SpeakerReconciler) reconcileDelete(ctx context.Context, obj *talksv1.Speaker, client *cfp.SpeakerClient) (ctrl.Result, error) {
-	// api call to delete the Speaker
-	err := client.Delete(ctx, speakerPath, obj.Status.ID)
-	if err != nil {
-		// return the error so we can requeue
-		return ctrl.Result{}, err
+func (r *SpeakerReconciler) reconcileDelete(ctx context.Context, obj *talksv1.Speaker, client *cfp.Client) (ctrl.Result, error) {
+	// api call to delete the Speaker if necessary
+	if obj.Status.ID != "" {
+		err := client.Delete(ctx, cfp.SpeakerPath, obj.Status.ID)
+		if err != nil {
+			// return the error so we can requeue
+			return ctrl.Result{}, err
+		}
 	}
 	// clean the finalizer
 	controllerutil.RemoveFinalizer(obj, talksv1.Finalizer)
-	fmt.Println("FINALIZER REMOVED", obj.Generation)
 
 	// Stop the reconciliation
 	return ctrl.Result{}, nil
@@ -276,7 +272,7 @@ func (r *SpeakerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func createpayload(obj *talksv1.Speaker) ([]byte, error) {
+func createSpeakerPayload(obj *talksv1.Speaker) ([]byte, error) {
 	body := struct {
 		ID    string `json:"id"`
 		Name  string `json:"name"`

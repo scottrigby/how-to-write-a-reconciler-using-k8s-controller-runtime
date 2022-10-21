@@ -5,10 +5,11 @@ import (
 )
 
 const (
-	SessionPresentationType = "session presentation"
-	// PanelType               = "PanelDiscussion"
-	LightningTalkType = "lightning talk"
-	// KeynoteType             = "Keynote"
+	SessionPresentationType = "talk"
+	// PanelType               = "panelDiscussion"
+	TutorialType      = "tutorial"
+	LightningTalkType = "lightning"
+	// KeynoteType             = "keynote"
 )
 
 // Speaker represents a speaker who is submitting a proposal.
