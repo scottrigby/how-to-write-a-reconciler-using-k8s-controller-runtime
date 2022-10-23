@@ -79,7 +79,7 @@ spec:
           status:
             description: ProposalStatus defines the observed state of Proposal
             properties:
-              conditions:omitempty:
+              conditions:
                 description: Conditions is a list of conditions and their status.
                 items:
                   description: "Condition contains details for one aspect of the current
@@ -148,7 +148,7 @@ spec:
                   - type
                   type: object
                 type: array
-              lastUpdate:omitempty:
+              lastUpdate:
                 description: The time at which the proposal was submitted
                 format: date-time
                 type: string
@@ -157,7 +157,7 @@ spec:
                   the Speaker object.
                 format: int64
                 type: integer
-              submission:omitempty:
+              submission:
                 description: Submission represents the current status of the proposal
                   It can be draft or final
                 enum:
