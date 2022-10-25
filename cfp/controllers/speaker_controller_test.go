@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -120,6 +121,46 @@ func Test_Speaker_Reconcile(t *testing.T) {
 				}
 				g.Expect(obj.Status.Conditions).To(conditions.MatchConditions(assertConditions))
 
+			},
+		},
+		{
+			name:    "test delete speaker reconciliation",
+			Speaker: "Jesse Pinkman",
+			Bio:     "Dealer of meth",
+			Email:   "blue.meth@protonmail.com",
+			assertFunc: func(obj *talksv1.Speaker, assertConditions []metav1.Condition) {
+				key := client.ObjectKey{Name: obj.Name, Namespace: obj.Namespace}
+				// Wait for finalizer to be set
+				g.Eventually(func() bool {
+					if err := testEnv.Get(ctx, key, obj); err != nil {
+						return false
+					}
+					return len(obj.Finalizers) > 0
+				}, timeout).Should(BeTrue())
+
+				// Wait for Speaker to be Ready
+				g.Eventually(func() bool {
+					if err := testEnv.Get(ctx, key, obj); err != nil {
+						return false
+					}
+					if !conditions.IsReady(obj) {
+						return false
+					}
+					readyCondition := conditions.Get(obj, meta.ReadyCondition)
+					return obj.Generation == readyCondition.ObservedGeneration &&
+						obj.Generation == obj.Status.ObservedGeneration
+				}, timeout).Should(BeTrue())
+
+				// Delete Speaker
+				g.Expect(testEnv.Delete(ctx, obj)).To(Succeed())
+
+				// Wait for Speaker to be deleted
+				g.Eventually(func() bool {
+					if err := testEnv.Get(ctx, key, obj); err != nil {
+						return apierrors.IsNotFound(err)
+					}
+					return false
+				}, timeout).Should(BeTrue())
 			},
 		},
 	}

@@ -138,6 +138,11 @@ func (r *SpeakerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		return ctrl.Result{}, err
 	}
 
+	// Check if this a deletion, if yes api call to delete the Speaker
+	if !obj.ObjectMeta.DeletionTimestamp.IsZero() {
+		return r.reconcileDelete(ctx, obj, cfpClient)
+	}
+
 	// Perform reconciliation logic
 	result, retErr = r.reconcile(ctx, obj, cfpClient)
 	return
@@ -248,6 +253,23 @@ func (r *SpeakerReconciler) handleSpeakerUpdate(ctx context.Context, obj *talksv
 	}
 
 	return nil
+}
+
+// reconcileDelete will delete the obj from the CFP API
+func (r *SpeakerReconciler) reconcileDelete(ctx context.Context, obj *talksv1.Speaker, client *cfp.Client) (ctrl.Result, error) {
+	// api call to delete the Speaker if necessary
+	if obj.Status.ID != "" {
+		err := client.Delete(ctx, cfp.SpeakerPath, obj.Status.ID)
+		if err != nil {
+			// return the error so we can requeue
+			return ctrl.Result{}, err
+		}
+	}
+	// clean the finalizer
+	controllerutil.RemoveFinalizer(obj, talksv1.Finalizer)
+
+	// Stop the reconciliation
+	return ctrl.Result{}, nil
 }
 
 func createSpeakerPayload(obj *talksv1.Speaker) ([]byte, error) {
