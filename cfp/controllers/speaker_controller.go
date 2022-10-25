@@ -17,6 +17,7 @@ limitations under the License.
 package controllers
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -151,6 +152,7 @@ func (r *SpeakerReconciler) reconcile(ctx context.Context, obj *talksv1.Speaker,
 		if !result.Requeue && retErr == nil {
 			conditions.Delete(obj, meta.ReconcilingCondition)
 			conditions.Delete(obj, talksv1.CreateFailedCondition)
+			conditions.Delete(obj, talksv1.UpdateFailedCondition)
 			conditions.MarkTrue(obj, meta.ReadyCondition, meta.SucceededReason, "reconciled '%s' successfully", obj.Name)
 		}
 
@@ -166,7 +168,10 @@ func (r *SpeakerReconciler) reconcile(ctx context.Context, obj *talksv1.Speaker,
 			case cfp.ErrCreateSpeaker:
 				conditions.MarkTrue(obj, talksv1.CreateFailedCondition, apiErr.Reason.Reason, apiErr.Error())
 				conditions.MarkFalse(obj, meta.ReadyCondition, apiErr.Reason.Reason, apiErr.Error())
-			case cfp.ErrCreateRequest, cfp.ErrMakeRequest:
+			case cfp.ErrUpdateSpeaker:
+				conditions.MarkTrue(obj, talksv1.UpdateFailedCondition, apiErr.Reason.Reason, apiErr.Error())
+				conditions.MarkFalse(obj, meta.ReadyCondition, apiErr.Reason.Reason, apiErr.Error())
+			case cfp.ErrCreateRequest, cfp.ErrMakeRequest, cfp.ErrFetchSpeaker:
 				conditions.MarkFalse(obj, meta.ReadyCondition, apiErr.Reason.Reason, apiErr.Error())
 			default:
 				conditions.MarkFalse(obj, meta.ReadyCondition, meta.FailedReason, apiErr.Error())
@@ -177,6 +182,20 @@ func (r *SpeakerReconciler) reconcile(ctx context.Context, obj *talksv1.Speaker,
 	// Set the initial status of the object to be reconciling
 	if obj.Generation != obj.Status.ObservedGeneration {
 		conditions.MarkReconciling(obj, meta.ProgressingReason, fmt.Sprintf("Reconciling a new generation of the object %d", obj.Generation))
+	}
+
+	// Check if an ID exist in the Status
+	// Check if an update make sense
+	// Make an Api call and check if anything changed on the obj spec.
+	// If it is not found
+	// Set a condition UpdateFailedCondition
+	// error and requeue
+	if obj.Status.ID != "" {
+		err := r.handleSpeakerUpdate(ctx, obj, client)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
 	}
 
 	// Create the Speaker
@@ -201,6 +220,31 @@ func (r *SpeakerReconciler) createSpeaker(ctx context.Context, obj *talksv1.Spea
 	_, err = client.Create(ctx, cfp.SpeakerPath, body)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (r *SpeakerReconciler) handleSpeakerUpdate(ctx context.Context, obj *talksv1.Speaker, client *cfp.Client) error {
+	// Make a call to the API to update obj
+	body, err := createSpeakerPayload(obj)
+	if err != nil {
+		return fmt.Errorf("error creating request: %w", err)
+	}
+
+	// Get the Speaker
+	payload, err := client.Get(ctx, cfp.SpeakerPath, obj.Status.ID)
+	if err != nil {
+		return err
+	}
+
+	// Check if the payload is the same
+	// if not, it means we have changed the spec, so we need to update the speaker
+	if !bytes.Equal(payload, body) {
+		_, err = client.Update(ctx, cfp.SpeakerPath, obj.Status.ID, body)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
