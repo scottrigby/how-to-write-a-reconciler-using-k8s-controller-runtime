@@ -211,6 +211,76 @@ func Test_Proposal_Reconcile(t *testing.T) {
 				}, timeout).Should(BeTrue())
 			},
 		},
+		{
+			name:         "test delete Speaker, expect a proposal status change",
+			title:        "this is a test proposal",
+			abstract:     "this is a test abstract",
+			proposalType: "lightning",
+			final:        true,
+			assertConditions: []metav1.Condition{
+				*conditions.FalseCondition(meta.ReadyCondition, meta.FailedReason, "unable to get speaker <namespacedName>: <group> \"<name>\" not found"),
+				*conditions.TrueCondition(talksv1.FetchFailedCondition, talksv1.FetchFailedReason, "unable to get speaker <namespacedName>: <group> \"<name>\" not found"),
+			},
+			assertFunc: func(obj *talksv1.Proposal, speaker *talksv1.Speaker, assertConditions []metav1.Condition) {
+				speakerKey := client.ObjectKey{Name: speaker.Name, Namespace: speaker.Namespace}
+				// Wait for Speaker to be Ready
+				g.Eventually(func() bool {
+					if err := testEnv.Get(ctx, speakerKey, speaker); err != nil {
+						return false
+					}
+					if !conditions.IsReady(speaker) {
+						return false
+					}
+					readyCondition := conditions.Get(speaker, meta.ReadyCondition)
+					return speaker.Generation == readyCondition.ObservedGeneration &&
+						speaker.Generation == speaker.Status.ObservedGeneration
+				}, timeout).Should(BeTrue())
+
+				key := client.ObjectKey{Name: obj.Name, Namespace: obj.Namespace}
+				// Wait for Proposal to be Ready
+				g.Eventually(func() bool {
+					if err := testEnv.Get(ctx, key, obj); err != nil {
+						return false
+					}
+					if !conditions.IsReady(obj) {
+						return false
+					}
+					readyCondition := conditions.Get(obj, meta.ReadyCondition)
+					return obj.Generation == readyCondition.ObservedGeneration &&
+						obj.Generation == obj.Status.ObservedGeneration
+				}, timeout).Should(BeTrue())
+
+				// Delete Speaker
+				g.Expect(testEnv.Delete(ctx, speaker)).To(Succeed())
+
+				// Wait for <speakerto be deleted
+				g.Eventually(func() bool {
+					if err := testEnv.Get(ctx, speakerKey, obj); err != nil {
+						return apierrors.IsNotFound(err)
+					}
+					return false
+				}, timeout).Should(BeTrue())
+
+				// Wait for proposal to not be Ready
+				g.Eventually(func() bool {
+					if err := testEnv.Get(ctx, key, obj); err != nil {
+						return false
+					}
+					if !conditions.IsFalse(obj, meta.ReadyCondition) {
+						return false
+					}
+					readyCondition := conditions.Get(speaker, meta.ReadyCondition)
+					return obj.Generation == readyCondition.ObservedGeneration &&
+						obj.Generation == obj.Status.ObservedGeneration
+				}, timeout).Should(BeTrue())
+				for k := range assertConditions {
+					assertConditions[k].Message = strings.ReplaceAll(assertConditions[k].Message, "<name>", obj.Spec.SpeakerRef.Name)
+					assertConditions[k].Message = strings.ReplaceAll(assertConditions[k].Message, "<namespacedName>", fmt.Sprintf("%s/%s", obj.Namespace, obj.Spec.SpeakerRef.Name))
+					assertConditions[k].Message = strings.ReplaceAll(assertConditions[k].Message, "<group>", fmt.Sprintf("Speaker.%s", talksv1.GroupVersion.Group))
+				}
+				g.Expect(obj.Status.Conditions).To(conditions.MatchConditions(assertConditions))
+			},
+		},
 	}
 
 	for _, tc := range testCases {

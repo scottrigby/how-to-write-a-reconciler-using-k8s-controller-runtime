@@ -29,9 +29,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/fluxcd/pkg/apis/meta"
 	"github.com/fluxcd/pkg/runtime/conditions"
@@ -61,9 +65,50 @@ type ProposalReconciler struct {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ProposalReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := mgr.GetCache().IndexField(context.TODO(), &talksv1.Proposal{}, talksv1.SpeakerIndexKey,
+		r.indexProposalBySpeakerName); err != nil {
+		return fmt.Errorf("failed setting index fields: %w", err)
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&talksv1.Proposal{}).
+		Watches(
+			&source.Kind{Type: &talksv1.Speaker{}},
+			handler.EnqueueRequestsFromMapFunc(r.requestsForSpeakerChange),
+			builder.WithPredicates(SpeakerChangePredicate{}),
+		).
 		Complete(r)
+}
+
+func (r *ProposalReconciler) indexProposalBySpeakerName(o client.Object) []string {
+	p, ok := o.(*talksv1.Proposal)
+	if !ok {
+		panic(fmt.Sprintf("Expected a Proposal, got %T", o))
+	}
+	return []string{p.Spec.SpeakerRef.Name}
+}
+
+func (r *ProposalReconciler) requestsForSpeakerChange(o client.Object) []reconcile.Request {
+	speaker, ok := o.(*talksv1.Speaker)
+	if !ok {
+		panic(fmt.Sprintf("Expected a Speaker, got %T", o))
+	}
+	// If we do not have an ID, we can't look up proposals
+	if speaker.Status.ID == "" {
+		return nil
+	}
+
+	ctx := context.Background()
+	var list talksv1.ProposalList
+	if err := r.List(ctx, &list, client.MatchingFields{talksv1.SpeakerIndexKey: speaker.Name}); err != nil {
+		return nil
+	}
+
+	var reqs []reconcile.Request
+	for _, i := range list.Items {
+		reqs = append(reqs, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(&i)})
+	}
+	return reqs
 }
 
 //+kubebuilder:rbac:groups=talks.kubecon.na,resources=proposals,verbs=get;list;watch;create;update;patch;delete
