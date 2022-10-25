@@ -143,6 +143,11 @@ func (r *ProposalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 		return ctrl.Result{}, err
 	}
 
+	// Check if this a deletion, if yes api call to delete the Speaker
+	if !obj.ObjectMeta.DeletionTimestamp.IsZero() {
+		return r.reconcileDelete(ctx, obj, cfpClient)
+	}
+
 	// Perform reconciliation logic
 	result, retErr = r.reconcile(ctx, obj, cfpClient)
 
@@ -319,6 +324,23 @@ func (r *ProposalReconciler) updateSubmission(ctx context.Context, obj *talksv1.
 		// Return
 	}
 	return nil, nil
+}
+
+// reconcileDelete will delete the obj from the CFP API if it is still a draft.
+func (r *ProposalReconciler) reconcileDelete(ctx context.Context, obj *talksv1.Proposal, client *cfp.Client) (ctrl.Result, error) {
+	// api call to delete the proposal if it is still a draft
+	if obj.Status.Submission == talksv1.ProposalStateDraft {
+		err := client.Delete(ctx, cfp.ProposalPath, fmt.Sprintf("%s-%s", obj.Namespace, obj.Name))
+		if err != nil {
+			// return the error so we can requeue
+			return ctrl.Result{}, err
+		}
+	}
+	// clean the finalizer
+	controllerutil.RemoveFinalizer(obj, talksv1.Finalizer)
+
+	// Stop the reconciliation
+	return ctrl.Result{}, nil
 }
 
 func createProposalPayload(obj *talksv1.Proposal, speakerID, submission string) ([]byte, error) {

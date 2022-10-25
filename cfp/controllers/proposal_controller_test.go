@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -175,6 +176,39 @@ func Test_Proposal_Reconcile(t *testing.T) {
 				}
 				g.Expect(obj.Status.Conditions).To(conditions.MatchConditions(assertConditions))
 
+			},
+		},
+		{
+			name:         "test delete proposal reconciliation",
+			title:        "this is a test proposal",
+			abstract:     "this is a test abstract",
+			proposalType: "lightning",
+			final:        true,
+			assertFunc: func(obj *talksv1.Proposal, _ *talksv1.Speaker, assertConditions []metav1.Condition) {
+				key := client.ObjectKey{Name: obj.Name, Namespace: obj.Namespace}
+				// Wait for Proposal to be Ready
+				g.Eventually(func() bool {
+					if err := testEnv.Get(ctx, key, obj); err != nil {
+						return false
+					}
+					if !conditions.IsReady(obj) {
+						return false
+					}
+					readyCondition := conditions.Get(obj, meta.ReadyCondition)
+					return obj.Generation == readyCondition.ObservedGeneration &&
+						obj.Generation == obj.Status.ObservedGeneration
+				}, timeout).Should(BeTrue())
+
+				// Delete Proposal
+				g.Expect(testEnv.Delete(ctx, obj)).To(Succeed())
+
+				// Wait for Proposal to be deleted
+				g.Eventually(func() bool {
+					if err := testEnv.Get(ctx, key, obj); err != nil {
+						return apierrors.IsNotFound(err)
+					}
+					return false
+				}, timeout).Should(BeTrue())
 			},
 		},
 	}
