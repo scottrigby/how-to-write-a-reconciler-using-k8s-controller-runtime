@@ -17,6 +17,7 @@ limitations under the License.
 package controllers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -155,6 +156,7 @@ func (r *ProposalReconciler) reconcile(ctx context.Context, obj *talksv1.Proposa
 			conditions.Delete(obj, meta.ReconcilingCondition)
 			conditions.Delete(obj, talksv1.CreateFailedCondition)
 			conditions.Delete(obj, talksv1.FetchFailedCondition)
+			conditions.Delete(obj, talksv1.UpdateFailedCondition)
 			conditions.MarkTrue(obj, meta.ReadyCondition, meta.SucceededReason, "reconciled '%s' successfully", obj.Name)
 		}
 
@@ -165,7 +167,10 @@ func (r *ProposalReconciler) reconcile(ctx context.Context, obj *talksv1.Proposa
 				case cfp.ErrCreateProposal:
 					conditions.MarkTrue(obj, talksv1.CreateFailedCondition, apiErr.Reason.Reason, apiErr.Error())
 					conditions.MarkFalse(obj, meta.ReadyCondition, apiErr.Reason.Reason, apiErr.Error())
-				case cfp.ErrCreateRequest, cfp.ErrMakeRequest:
+				case cfp.ErrUpdateProposal:
+					conditions.MarkTrue(obj, talksv1.UpdateFailedCondition, apiErr.Reason.Reason, apiErr.Error())
+					conditions.MarkFalse(obj, meta.ReadyCondition, apiErr.Reason.Reason, apiErr.Error())
+				case cfp.ErrCreateRequest, cfp.ErrMakeRequest, cfp.ErrFetchProposal:
 					conditions.MarkFalse(obj, meta.ReadyCondition, apiErr.Reason.Reason, apiErr.Error())
 				default:
 					conditions.MarkFalse(obj, meta.ReadyCondition, meta.FailedReason, apiErr.Error())
@@ -210,6 +215,15 @@ func (r *ProposalReconciler) reconcile(ctx context.Context, obj *talksv1.Proposa
 		err      error
 	)
 	if obj.Status.Submission != "" {
+		response, err = r.updateSubmission(ctx, obj, speakerID, client)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		if response != nil {
+			obj.Status.Submission = response.Submission.Status
+			obj.Status.LastUpdate = metav1.Time{Time: response.Submission.LastUpdate}
+		}
 		return ctrl.Result{}, nil
 	}
 
@@ -249,6 +263,62 @@ func (r *ProposalReconciler) createProposal(ctx context.Context, obj *talksv1.Pr
 	}
 
 	return p, nil
+}
+
+func (r *ProposalReconciler) updateSubmission(ctx context.Context, obj *talksv1.Proposal, speakerID string, client *cfp.Client) (*ProposalObject, error) {
+	switch obj.Status.Submission {
+	case talksv1.ProposalStateDraft:
+		// If the proposal is marked final, and the submission status is not final, create an entry in cfp.
+		if obj.Spec.Final {
+			// Create a draft proposal
+			proposal, err := createProposalPayload(obj, speakerID, talksv1.ProposalStateFinal)
+			if err != nil {
+				return nil, err
+			}
+			// Update the proposal
+			resp, err := client.Update(ctx, cfp.ProposalPath, fmt.Sprintf("%s-%s", obj.Namespace, obj.Name), proposal)
+			if err != nil {
+				return nil, err
+			}
+
+			p := &ProposalObject{}
+			err = json.Unmarshal(resp, p)
+			if err != nil {
+				return nil, err
+			}
+			return p, nil
+		} else {
+			// Check if the proposal content needs to be updated
+			content, err := client.Get(ctx, cfp.ProposalPath, fmt.Sprintf("%s-%s", obj.Namespace, obj.Name))
+			if err != nil {
+				return nil, err
+			}
+
+			// Create a draft proposal
+			proposal, err := createProposalPayload(obj, speakerID, talksv1.ProposalStateDraft)
+			if err != nil {
+				return nil, err
+			}
+
+			// If the proposal content is not the same, update the proposal
+			if !bytes.Equal(content, proposal) {
+				resp, err := client.Update(ctx, cfp.ProposalPath, fmt.Sprintf("%s-%s", obj.Namespace, obj.Name), proposal)
+				if err != nil {
+					return nil, err
+				}
+				p := &ProposalObject{}
+				err = json.Unmarshal(resp, p)
+				if err != nil {
+					return nil, err
+				}
+				return p, nil
+			}
+		}
+	case talksv1.ProposalStateFinal:
+		// If the proposal submission is final, no need to update
+		// Return
+	}
+	return nil, nil
 }
 
 func createProposalPayload(obj *talksv1.Proposal, speakerID, submission string) ([]byte, error) {

@@ -124,6 +124,59 @@ func Test_Proposal_Reconcile(t *testing.T) {
 
 			},
 		},
+		{
+			name:         "test update proposal reconciliation from draft to final",
+			title:        "this is a test proposal",
+			abstract:     "this is a test abstract",
+			proposalType: "lightning",
+			final:        false,
+			assertConditions: []metav1.Condition{
+				*conditions.TrueCondition(meta.ReadyCondition, meta.SucceededReason, "reconciled '<name>' successfully"),
+			},
+			assertFunc: func(obj *talksv1.Proposal, _ *talksv1.Speaker, assertConditions []metav1.Condition) {
+				key := client.ObjectKey{Name: obj.Name, Namespace: obj.Namespace}
+				// Wait for Proposal to be Ready
+				g.Eventually(func() bool {
+					if err := testEnv.Get(ctx, key, obj); err != nil {
+						return false
+					}
+					if !conditions.IsReady(obj) {
+						return false
+					}
+					readyCondition := conditions.Get(obj, meta.ReadyCondition)
+					return obj.Generation == readyCondition.ObservedGeneration &&
+						obj.Generation == obj.Status.ObservedGeneration
+				}, timeout).Should(BeTrue())
+
+				g.Expect(obj.Status.Submission).To(Equal("draft"))
+
+				patch, err := patch.NewHelper(obj, testEnv)
+				g.Expect(err).ToNot(HaveOccurred())
+				// Set the status to final
+				obj.Spec.Final = true
+				g.Expect(patch.Patch(ctx, obj)).To(Succeed())
+
+				// Wait for Proposal to be Ready
+				g.Eventually(func() bool {
+					if err := testEnv.Get(ctx, key, obj); err != nil {
+						return false
+					}
+					if !conditions.IsReady(obj) {
+						return false
+					}
+					readyCondition := conditions.Get(obj, meta.ReadyCondition)
+					return obj.Generation == readyCondition.ObservedGeneration &&
+						obj.Generation == obj.Status.ObservedGeneration &&
+						obj.Status.Submission == talksv1.ProposalStateFinal
+				}, timeout).Should(BeTrue())
+
+				for k := range assertConditions {
+					assertConditions[k].Message = strings.ReplaceAll(assertConditions[k].Message, "<name>", obj.Name)
+				}
+				g.Expect(obj.Status.Conditions).To(conditions.MatchConditions(assertConditions))
+
+			},
+		},
 	}
 
 	for _, tc := range testCases {
