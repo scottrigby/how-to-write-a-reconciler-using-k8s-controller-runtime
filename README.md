@@ -43,7 +43,7 @@ export KUBECONFIG=/tmp/cfp-api-test-kubeconfig
 
 ## Step-By-Step Guide
 
-Once the [dev env setup](#local-dev) is ready, each step will use [git tags](https://git-scm.com/book/en/v2/Git-Basics-Tagging). Each step will consist of doing `git checkout tags/<s#> -b <s#>`.
+Once the [dev env setup](#local-dev) is ready, each step will use a [git tag](https://git-scm.com/book/en/v2/Git-Basics-Tagging). 
 
 There are 7 steps, which match to 7 tags:
 ```bash
@@ -57,7 +57,9 @@ s6
 s7
 ```
 
-To move from one tag to another, checkout the tag and create a new branch from it. For example, to move to the first step (or tag), do the following:
+To move from one tag to another, checkout the tag and create a new branch from it.
+
+For example, move to the first step:
 ```bash
 git checkout tags/s1 -b s1
 ```
