@@ -27,10 +27,8 @@ Dependencies:
 - [Kustomize](https://kubectl.docs.kubernetes.io/installation/kustomize/)
 
 For the local dev setup, there are a few options:
-1. **GitPod**. GitPod is the preferred method, to ensure all users are running in the same environment regardless of their local machine OS. Please click on the button "Open in Gitpod" at the top of this README. Click through the default settings until you arrive at a page that looks like VSCode. Then, wait while the dependencies load (approximately ~6 minutes).
-```bash
+1. **GitPod**. GitPod is the preferred method, to ensure all users are running in the same environment regardless of their local machine OS. Please click on the button "Open in Gitpod" at the top of this README. Click through the default settings until you arrive at a page that looks like VSCode. Then, wait while the dependencies load (approximately ~6 minutes). When prompted:
 
-```
 2. **Vagrant**. As a backup, there is a Vagrantfile with instructions [here](dev/vagrant/README.md).
 3. **DIY**. If you have all the required dependencies, you can go ahead and spinup a dev environment:
 ```bash
