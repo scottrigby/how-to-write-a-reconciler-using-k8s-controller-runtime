@@ -44,6 +44,7 @@ export KUBECONFIG=/tmp/cfp-api-test-kubeconfig
 Once the [dev env setup](#local-dev) is ready, each step will use a [git tag](https://git-scm.com/book/en/v2/Git-Basics-Tagging). 
 
 There are 7 steps, which match to 7 tags:
+
 <img width="458" alt="Screen Shot 2022-10-26 at 4 07 05 PM" src="https://user-images.githubusercontent.com/407675/198126519-28475fc7-6ef8-44c6-b380-4287631032cd.png">
 
 To move from one tag to another, checkout the tag and create a new branch from it.
