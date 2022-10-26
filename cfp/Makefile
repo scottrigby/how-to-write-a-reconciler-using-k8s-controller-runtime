@@ -163,7 +163,7 @@ cleanup-kind:
 	rm $(TEST_KUBECONFIG)
 
 .PHONY: dev-deploy
-dev-deploy: docker-build # Deploy controller dev image in the configured Kubernetes cluster in $(TEST_KUBECONFIG)
+dev-deploy: # Deploy controller dev image in the configured Kubernetes cluster in $(TEST_KUBECONFIG)
 	kind load docker-image ${IMG} --name=cp-test-cluster
 	mkdir -p config/dev && cp config/default/* config/dev
 	cd config/dev && kustomize edit set image controller=${IMG}
