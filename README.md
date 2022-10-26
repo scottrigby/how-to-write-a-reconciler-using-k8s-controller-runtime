@@ -28,6 +28,9 @@ Dependencies:
 
 For the local dev setup, there are a few options:
 1. **GitPod**. GitPod is the preferred method, to ensure all users are running in the same environment regardless of their local machine OS. Please click on the button "Open in Gitpod" at the top of this README. Click through the default settings until you arrive at a page that looks like VSCode. Then, wait while the dependencies load (approximately ~6 minutes).
+```bash
+
+```
 2. **Vagrant**. As a backup, there is a Vagrantfile with instructions [here](dev/vagrant/README.md).
 3. **DIY**. If you have all the required dependencies, you can go ahead and spinup a dev environment:
 ```bash
@@ -37,3 +40,31 @@ make setup-kind
 make dev-deploy
 export KUBECONFIG=/tmp/cfp-api-test-kubeconfig
 ```
+
+## Step-By-Step Guide
+
+Once the [dev env setup](#local-dev) is ready, each step will use [git tags](https://git-scm.com/book/en/v2/Git-Basics-Tagging). Each step will consist of doing `git checkout tags/<s#> -b <s#>`.
+
+There are 7 steps, which match to 7 tags:
+```bash
+git tag
+s1
+s2
+s3
+s4
+s5
+s6
+s7
+```
+
+To move from one tag to another, checkout the tag and create a new branch from it. For example, to move to the first step (or tag), do the following:
+```bash
+git checkout tags/s1 -b s1
+```
+
+Then, run the tests: 
+```bash
+make test
+```
+
+And so on for each step!
